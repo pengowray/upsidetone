@@ -6,15 +6,20 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using NAudio.Mixer;
 
 namespace MorseKeyer.Sound
 {
     public class Sounder {
 
         private int Latency = 50;
-        IWavePlayer waveOutDevice;
-        SignalGenerator Sine;
+        IWavePlayer? waveOutDevice;
 
+        SignalGenerator Sine;
+        //List<AdsrSampleProvider> AdsrList = new();
+        AdsrSampleProvider? Adsr;
+
+        MixingSampleProvider Mixer;
         //WaveStream mainOutputStream;
 
 
@@ -22,34 +27,34 @@ namespace MorseKeyer.Sound
         public Sounder(int latency = 50) {
             Latency = latency;
 
-            Sine = new SignalGenerator() {
-                Gain = 0.4,
-                Frequency = 550,
-                Type = SignalGeneratorType.Sin
-            };
         }
 
         public void Enable() {
             // start running.
             try {
+
+                Sine = new SignalGenerator() {
+                    Gain = 0.4,
+                    Frequency = 550,
+                    Type = SignalGeneratorType.Sin, 
+                };
+
                 waveOutDevice = new DirectSoundOut(Latency);
-                
-                
+
+                var Format = WaveFormat.CreateIeeeFloatWaveFormat(sampleRate: 44100, channels: 1);
+                //Mixer = new MixingSampleProvider(44100, 2);
+                Mixer = new MixingSampleProvider(Format);
+                Mixer.ReadFully = true;
+                waveOutDevice?.Init(Mixer);
+                waveOutDevice?.Play();
+
             } catch (Exception driverCreateException) {
                 Console.WriteLine(String.Format("{0}", driverCreateException.Message));
                 return;
             }
 
-            //TODO: sounds
-            /*
-            mainOutputStream = CreateInputStream(fileName);
-            try {
-                waveOutDevice.Init(mainOutputStream);
-            } catch (Exception initException) {
-                Console.WriteLine(String.Format("{0}", initException.Message), "Error Initializing Output");
-                return;
-            }
-            */
+
+
 
         }
 
@@ -62,26 +67,24 @@ namespace MorseKeyer.Sound
             // https://csharp.hotexamples.com/examples/NAudio.Wave/DirectSoundOut/Play/php-directsoundout-play-method-examples.html
 
 
-            //Sine.Take(TimeSpan.FromSeconds(20));
-            //using (var wo = new WaveOutEvent()) {
-            //    wo.Init(sine.Take(TimeSpan.FromSeconds(1)));
-            //    wo.Play();
-            //    while (wo.PlaybackState == PlaybackState.Playing) {
-            //        Thread.Sleep(500);
-            //    }
-            //}
+            if (Adsr == null) {
 
-            waveOutDevice.Init(Sine);
-            //waveOutDevice.Init(Sine.Take(TimeSpan.FromSeconds(1)));
-            waveOutDevice.Play();
-            Console.WriteLine("playing...");
+                //https://stackoverflow.com/a/23357560/443019
 
+                Adsr = new AdsrSampleProvider(Sine.ToMono()) {
+                    AttackSeconds = 0.02f,
+                    ReleaseSeconds = 0.02f
+                };
+
+                Mixer.AddMixerInput(Adsr);
+            }
+
+            
         }
 
         public void StraightKeyUp() {
-            if (waveOutDevice?.PlaybackState == PlaybackState.Playing) {
-                waveOutDevice.Pause();
-            }
+            Adsr?.Stop();
+            Adsr = null;
         }
 
 

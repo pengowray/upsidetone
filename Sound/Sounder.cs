@@ -12,7 +12,7 @@ namespace MorseKeyer.Sound
 {
     public class Sounder {
 
-        private int Latency = 50;
+        private int Latency = 30;
         IWavePlayer? waveOutDevice;
 
         SignalGenerator Sine;
@@ -72,8 +72,8 @@ namespace MorseKeyer.Sound
                 //https://stackoverflow.com/a/23357560/443019
 
                 Adsr = new AdsrSampleProvider(Sine.ToMono()) {
-                    AttackSeconds = 0.02f,
-                    ReleaseSeconds = 0.02f
+                    AttackSeconds = 0.015f,
+                    ReleaseSeconds = 0.015f
                 };
 
                 Mixer.AddMixerInput(Adsr);

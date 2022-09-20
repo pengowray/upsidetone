@@ -71,7 +71,7 @@ namespace VirtualMorseKeyer.MidiMorse {
         }
 
         private void MidiIn_MessageReceived(object? sender, MidiInMessageEventArgs e) {
-            MainWindow.Debug(e?.ToString());
+            //MainWindow.Debug(e?.ToString()); // can't debug here, wrong thread
             if (e?.MidiEvent?.CommandCode == MidiCommandCode.NoteOn) {
                 Sounder.StraightKeyDown();
             } else if (e?.MidiEvent?.CommandCode == MidiCommandCode.NoteOff) {
@@ -81,7 +81,7 @@ namespace VirtualMorseKeyer.MidiMorse {
 
         private void MidiIn_ErrorReceived(object? sender, MidiInMessageEventArgs e) {
             //throw new NotImplementedException();
-            MainWindow.Debug("midi error: " + e?.ToString());
+            //MainWindow.Debug("midi error: " + e?.ToString()); // can't debug here, wrong thread
         }
 
 

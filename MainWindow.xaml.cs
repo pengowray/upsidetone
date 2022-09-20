@@ -71,7 +71,7 @@ namespace MorseKeyer {
         }
 
         public static void Debug(string text) {
-            //Me.Log(text);
+            Me.Log(text);
         }
 
     }

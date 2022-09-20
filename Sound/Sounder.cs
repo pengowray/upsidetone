@@ -15,11 +15,11 @@ namespace MorseKeyer.Sound
         private int Latency = 30;
         IWavePlayer? waveOutDevice;
 
-        SignalGenerator Sine;
+        SignalGenerator? Sine;
         //List<AdsrSampleProvider> AdsrList = new();
         AdsrSampleProvider? Adsr;
 
-        MixingSampleProvider Mixer;
+        MixingSampleProvider? Mixer;
         //WaveStream mainOutputStream;
 
 

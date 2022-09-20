@@ -13,6 +13,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using VirtualMorseKeyer.MidiMorse;
 
 namespace MorseKeyer {
     /// <summary>
@@ -21,11 +22,23 @@ namespace MorseKeyer {
     public partial class MainWindow : Window {
 
         Sounder Sounder;
+        MidiInput MidiInput;
+        static private MainWindow Me;
 
         public MainWindow() {
+            Me = this;
+
             InitializeComponent();
             Sounder = new Sounder();
             Sounder.Enable();
+
+            MidiInput = new MidiInput();
+            MidiInput.Enable(Sounder);
+
+            foreach (var device in MidiInput.DeviceNames()) {
+                MidiSelect.Items.Add(device);
+            }
+
         }
 
         private void Button_Click(object sender, RoutedEventArgs e) {
@@ -45,5 +58,21 @@ namespace MorseKeyer {
             // stop it getting stuck
             Sounder.StraightKeyUp();
         }
+
+        private void MidiSelect_SelectionChanged(object sender, SelectionChangedEventArgs e) {
+            var selected = MidiSelect.SelectedValue as string;
+            Debug(selected);
+            var success = MidiInput.SelectDevice(selected);
+            Debug("success: " + success);
+        }
+
+        public void Log(string text) {
+            DebugText.Text = DebugText.Text + "\n" + text;
+        }
+
+        public static void Debug(string text) {
+            //Me.Log(text);
+        }
+
     }
 }

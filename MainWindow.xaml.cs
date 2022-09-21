@@ -30,14 +30,21 @@ namespace MorseKeyer {
 
             InitializeComponent();
             Sounder = new Sounder();
+            Sounder.DeviceInfoDebug();
             Sounder.Enable();
 
             MidiInput = new MidiInput();
             MidiInput.Enable(Sounder);
 
+            foreach (var device in Sounder.Devices()) {
+                AudioOutputSelect.Items.Add(device);
+
+            }
+
             foreach (var device in MidiInput.DeviceNames()) {
                 MidiSelect.Items.Add(device);
             }
+
 
         }
 

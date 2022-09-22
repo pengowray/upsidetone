@@ -9,7 +9,7 @@
     <Grid>
         <ComboBox Name="AudioOutputSelect" HorizontalAlignment="Left" Margin="25,24,0,0" VerticalAlignment="Top" Width="360" RenderTransformOrigin="-0.042,0.457" Height="32"/>
         <ComboBox Name="MidiSelect" HorizontalAlignment="Left" Margin="25,79,0,0" VerticalAlignment="Top" Width="360" Height="32" SelectionChanged="MidiSelect_SelectionChanged" />
-        <Button Content="Key" HorizontalAlignment="Left" Height="230" Margin="25,154,0,0" VerticalAlignment="Top" Width="230" Click="Button_Click" MouseDown="Button_MouseDown" MouseUp="Button_MouseUp" MouseLeave="Button_MouseLeave"/>
+        <Button Content="Key" HorizontalAlignment="Left" Height="230" Margin="25,154,0,0" VerticalAlignment="Top" Width="360" Click="Button_Click" PreviewMouseLeftButtonDown="Button_MouseDown" PreviewMouseLeftButtonUp="Button_MouseUp" MouseDown="Button_MouseDown" MouseUp="Button_MouseUp" MouseLeave="Button_MouseLeave" />
         <TextBox Name="DebugText" HorizontalAlignment="Left" Height="414" Margin="400,0,0,0" TextWrapping="Wrap" Text="Debug log" VerticalAlignment="Center" Width="390" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto"/>
     </Grid>
 </Window>

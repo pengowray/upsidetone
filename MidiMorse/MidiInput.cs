@@ -10,14 +10,14 @@ using System.Threading.Tasks;
 
 namespace VirtualMorseKeyer.MidiMorse {
 
-    public class MidiInput {
+    public class MidiInput : IDisposable {
 
         // https://github.com/naudio/NAudio/blob/master/Docs/MidiInAndOut.md
 
         Sounder Sounder;
         MidiIn? Midi;
+        private bool disposedValue;
 
-           
         public void Enable(Sounder sounder) {
             Sounder = sounder ?? new Sounder();
             //Sounder.Enable();
@@ -84,6 +84,32 @@ namespace VirtualMorseKeyer.MidiMorse {
             //MainWindow.Debug("midi error: " + e?.ToString()); // can't debug here, wrong thread
         }
 
+        protected virtual void Dispose(bool disposing) {
+            if (!disposedValue) {
+                if (disposing) {
+                    // TODO: dispose managed state (managed objects)
+                }
 
+                // TODO: free unmanaged resources (unmanaged objects) and override finalizer
+                // TODO: set large fields to null
+                Sounder = null; // let something else dispose it
+                Midi?.Dispose();
+
+                disposedValue = true;
+            }
+        }
+
+        // // TODO: override finalizer only if 'Dispose(bool disposing)' has code to free unmanaged resources
+        // ~MidiInput()
+        // {
+        //     // Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
+        //     Dispose(disposing: false);
+        // }
+
+        public void Dispose() {
+            // Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
+            Dispose(disposing: true);
+            GC.SuppressFinalize(this);
+        }
     }
 }

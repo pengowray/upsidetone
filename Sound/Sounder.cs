@@ -40,6 +40,7 @@ namespace MorseKeyer.Sound
 
                 int sampleRate = 44100;
 
+                //examples:
                 //DUO-CAPTURE EX
                 //Voicemeeter AUX Virtual ASIO
                 //Voicemeeter Insert Virtual ASIO
@@ -51,7 +52,7 @@ namespace MorseKeyer.Sound
                 var test = "Voicemeeter AUX Virtual ASIO";
                 if (AsioOut.GetDriverNames().Any(d => d == test)) {
                     OutDevice = new AsioOut(test);
-                    MainWindow.Debug($"asio set ({test}; device:{OutDevice}; format:{OutDevice?.OutputWaveFormat?.ToString() ?? "null"}): " + OutDevice.ToString());
+                    MainWindow.Debug($"asio set ({test}; device:{OutDevice}; format:{OutDevice?.OutputWaveFormat?.ToString() ?? "null"}): " + OutDevice?.ToString());
                 } else {
                     OutDevice = new DirectSoundOut(Latency);
                 }
@@ -128,6 +129,8 @@ namespace MorseKeyer.Sound
                 MainWindow.Debug(asio);
                 yield return $"asio: {asio}";
             }
+
+            //TODO: VBAN (voicemeeter UDP)
         }
 
         public void DeviceInfoDebug() {
@@ -202,20 +205,14 @@ namespace MorseKeyer.Sound
                 if (disposing) {
                     // TODO: dispose managed state (managed objects)
 
-                    Adsr?.Stop();
-                    Mixer?.RemoveAllMixerInputs(); // probably not needed here
-                    OutDevice?.Stop();
-                    OutDevice?.Dispose();
+                    //Adsr?.Stop();
+                    //Mixer?.RemoveAllMixerInputs(); // probably not needed here
+                    //OutDevice?.Stop();
+                    OutDevice?.Dispose(); // crash?
 
-                    var asioOut = OutDevice as AsioOut;
-                    if (asioOut != null) {
-                        //asioOut?.Dispose();
-                    }
+                    //if (OutDevice is AsioOut asioOut) { }
+                    //if (OutDevice is DirectSoundOut directSoundOut) { }
 
-                    var directSoundOut = OutDevice as DirectSoundOut;
-                    if (directSoundOut != null) {
-                        //directSoundOut?.Dispose();
-                    }
                 }
 
                 // TODO: free unmanaged resources (unmanaged objects) and override finalizer

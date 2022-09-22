@@ -19,14 +19,17 @@ namespace MorseKeyer {
     /// <summary>
     /// Interaction logic for MainWindow.xaml
     /// </summary>
-    public partial class MainWindow : Window {
+    public partial class MainWindow : Window, IDisposable {
 
         Sounder Sounder;
         MidiInput MidiInput;
         static private MainWindow Me;
+        private bool disposedValue;
 
         public MainWindow() {
             Me = this;
+
+            Closed += MainWindow_Closed;
 
             InitializeComponent();
             Sounder = new Sounder();
@@ -47,6 +50,11 @@ namespace MorseKeyer {
 
 
         }
+
+        private void MainWindow_Closed(object? sender, EventArgs e) {
+            Dispose();
+        }
+
 
         private void Button_Click(object sender, RoutedEventArgs e) {
             //todo: delete me
@@ -81,5 +89,37 @@ namespace MorseKeyer {
             Me.Log(text);
         }
 
+        protected virtual void Dispose(bool disposing) {
+            if (!disposedValue) {
+                if (disposing) {
+                    // TODO: dispose managed state (managed objects)
+                    Sounder?.Dispose();
+                    MidiInput?.Dispose();
+
+                }
+
+                // TODO: free unmanaged resources (unmanaged objects) and override finalizer
+
+                // TODO: set large fields to null
+                Sounder = null;
+                MidiInput = null;
+                Me = null;
+
+                disposedValue = true;
+            }
+        }
+
+        // // TODO: override finalizer only if 'Dispose(bool disposing)' has code to free unmanaged resources
+        // ~MainWindow()
+        // {
+        //     // Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
+        //     Dispose(disposing: false);
+        // }
+
+        public void Dispose() {
+            // Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
+            Dispose(disposing: true);
+            GC.SuppressFinalize(this);
+        }
     }
 }

@@ -22,6 +22,9 @@ namespace MorseKeyer.Sound
         IWavePlayer? OutDevice; // DirectSoundOut or AsioOut
         WaveFormat? Format;
         SignalGenerator? Sine;
+        SignalGenerator? Sine2;
+        SignalGenerator? Sine3;
+
         //List<AdsrSampleProvider> AdsrList = new();
         AdsrSampleProvider? Adsr;
         MixingSampleProvider? Mixer;
@@ -37,8 +40,9 @@ namespace MorseKeyer.Sound
         public void Enable() {
             // start running.
             try {
-
-                int sampleRate = 44100;
+                //int defaultRate = 44100; 
+                int defaultRate = 48000; 
+                int sampleRate = defaultRate;
 
                 //examples:
                 //DUO-CAPTURE EX
@@ -48,7 +52,7 @@ namespace MorseKeyer.Sound
                 //Voicemeeter VAIO3 Virtual ASIO  // ok?
                 //Voicemeeter Virtual ASIO
 
-                //var test = "DUO-CAPTURE EX"; // works for ASIO but fails to unload
+                //var test = "DUO-CAPTURE EX"; // works for ASIO, and now can unload
                 var test = "Voicemeeter AUX Virtual ASIO";
                 if (AsioOut.GetDriverNames().Any(d => d == test)) {
                     OutDevice = new AsioOut(test);
@@ -57,7 +61,6 @@ namespace MorseKeyer.Sound
                     OutDevice = new DirectSoundOut(Latency);
                 }
 
-                int defaultRate = 48000; //  44100;
                 int defaultChannels = 2; // 1 works but will be left only
 
                 //note: OutDevice.OutputWaveFormat is null until after Init(); but then it's too late to get its default (especially for asio)
@@ -76,7 +79,17 @@ namespace MorseKeyer.Sound
 
                 Sine = new SignalGenerator(Format.SampleRate, channel: 1) {
                     Gain = Volume,
-                    Frequency = 650,
+                    Frequency = 138.5 * 3,  //650,  A major chord A, C#, E
+                    Type = SignalGeneratorType.Sin
+                };
+                Sine2 = new SignalGenerator(Format.SampleRate, channel: 1) {
+                    Gain = Volume,
+                    Frequency = 164.5 * 3,
+                    Type = SignalGeneratorType.Sin
+                };
+                Sine3 = new SignalGenerator(Format.SampleRate, channel: 1) {
+                    Gain = Volume,
+                    Frequency = 220.5 * 3,
                     Type = SignalGeneratorType.Sin
                 };
 
@@ -95,6 +108,9 @@ namespace MorseKeyer.Sound
                 // When SampleRate set to 44100 instead of 48000 on "Voicemeeter AUX Virtual ASIO"
                 // (NAudio.Wave.Asio.AsioException)
                 // Message == "Error code [ASE_NoClock] while calling ASIO method <setSampleRate>, "
+
+                // (System.ArgumentException): "SampleRate is not supported"
+                // when DUO-CAPTURE EX set to 44100 instead of 44000
 
                 string err = $"driverCreateException ({e?.GetType()}): " + e?.Message?.ToString();
                 Console.WriteLine(err);
@@ -163,7 +179,7 @@ namespace MorseKeyer.Sound
             //mainOutput
         }
 
-        public void StraightKeyDown() {
+        public void StraightKeyDown(int note = 1) {
             // https://github.com/naudio/NAudio/blob/master/Docs/PlaySineWave.md
             // https://csharp.hotexamples.com/examples/NAudio.Wave/DirectSoundOut/Play/php-directsoundout-play-method-examples.html
 
@@ -172,8 +188,12 @@ namespace MorseKeyer.Sound
 
                 //https://stackoverflow.com/a/23357560/443019
 
+                var wave = Sine;
+                if (note == 2) wave = Sine2;
+                if (note == 3) wave = Sine3;
+
                 if (Sine != null) {
-                    Adsr = new AdsrSampleProvider(Sine.ToMono(1, 0)) {
+                    Adsr = new AdsrSampleProvider(wave.ToMono(1, 0)) {
                         AttackSeconds = 0.015f,
                         ReleaseSeconds = 0.015f
                     };

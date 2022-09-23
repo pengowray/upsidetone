@@ -62,7 +62,13 @@ namespace MorseKeyer {
         }
 
         private void Button_MouseDown(object sender, MouseButtonEventArgs e) {
-            Sounder.StraightKeyDown();
+            if (e.LeftButton == MouseButtonState.Pressed) {
+                Sounder.StraightKeyDown(1);
+            } else if (e.MiddleButton == MouseButtonState.Pressed) {
+                Sounder.StraightKeyDown(2);
+            } else if (e.RightButton == MouseButtonState.Pressed) {
+                Sounder.StraightKeyDown(3);
+            }
         }
 
         private void Button_MouseUp(object sender, MouseButtonEventArgs e) {

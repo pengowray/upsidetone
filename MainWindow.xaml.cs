@@ -21,6 +21,7 @@ namespace MorseKeyer {
     /// </summary>
     public partial class MainWindow : Window, IDisposable {
 
+        AudioOut AudioOut;
         Sounder Sounder;
         MidiInput MidiInput;
         static private MainWindow Me;
@@ -32,14 +33,12 @@ namespace MorseKeyer {
             Closed += MainWindow_Closed;
 
             InitializeComponent();
-            Sounder = new Sounder();
-            Sounder.DeviceInfoDebug();
-            Sounder.Enable();
-
             MidiInput = new MidiInput();
-            MidiInput.Enable(Sounder);
+            MidiInput.Enable(Sounder); // sounder will be null but that's ok
 
-            foreach (var device in Sounder.Devices()) {
+            //GetOrCreateSounder(); // create default?
+
+            foreach (var device in AudioOut.Devices()) {
                 AudioOutputSelect.Items.Add(device);
 
             }
@@ -47,12 +46,40 @@ namespace MorseKeyer {
             foreach (var device in MidiInput.DeviceNames()) {
                 MidiSelect.Items.Add(device);
             }
-
-
         }
 
-        private void MainWindow_Closed(object? sender, EventArgs e) {
-            Dispose();
+        private Sounder GetOrCreateSounder() {
+            if (Sounder == null) {
+                var selected = AudioOutputSelect.SelectedValue as string;
+
+                AudioOut = new AudioOut();
+                AudioOut.Enable(selected); //TODO: latency option
+                Sounder = new Sounder(AudioOut);
+                Sounder.Enable();
+                MidiInput.SetSounder(Sounder);
+
+                //AudioOut.DeviceInfoDebug();
+            }
+            return Sounder;
+        }
+
+        private void MidiSelect_SelectionChanged(object sender, SelectionChangedEventArgs e) {
+            var selected = MidiSelect.SelectedValue as string;
+            Debug(selected);
+            var success = MidiInput.SelectDevice(selected);
+            Debug("success: " + success);
+        }
+
+        private void AudioOutputSelect_SelectionChanged(object sender, SelectionChangedEventArgs e) {
+            var selected = AudioOutputSelect.SelectedValue as string;
+            Debug("changing audio to: " + selected);
+            AudioOut?.Dispose();
+            Sounder?.Dispose();
+            AudioOut = null;
+            Sounder = null;
+            GetOrCreateSounder(); // create a new sounder immediately so Midi can talk to it
+
+            //TODO: make a sounder wrapper for midi etc to keep pressing buttons on even when audio device changed?
         }
 
 
@@ -61,30 +88,26 @@ namespace MorseKeyer {
             //Sounder.StraightKeyDown();
         }
 
+
+
         private void Button_MouseDown(object sender, MouseButtonEventArgs e) {
+            var sounder = GetOrCreateSounder();
             if (e.LeftButton == MouseButtonState.Pressed) {
-                Sounder.StraightKeyDown(1);
+                Sounder?.StraightKeyDown(1);
             } else if (e.MiddleButton == MouseButtonState.Pressed) {
-                Sounder.StraightKeyDown(2);
+                Sounder?.StraightKeyDown(2);
             } else if (e.RightButton == MouseButtonState.Pressed) {
-                Sounder.StraightKeyDown(3);
+                Sounder?.StraightKeyDown(3);
             }
         }
 
         private void Button_MouseUp(object sender, MouseButtonEventArgs e) {
-            Sounder.StraightKeyUp();
+            Sounder?.StraightKeyUp();
         }
 
         private void Button_MouseLeave(object sender, MouseEventArgs e) {
             // stop it getting stuck
-            Sounder.StraightKeyUp();
-        }
-
-        private void MidiSelect_SelectionChanged(object sender, SelectionChangedEventArgs e) {
-            var selected = MidiSelect.SelectedValue as string;
-            Debug(selected);
-            var success = MidiInput.SelectDevice(selected);
-            Debug("success: " + success);
+            Sounder?.StraightKeyUp();
         }
 
         public void Log(string text) {
@@ -95,19 +118,25 @@ namespace MorseKeyer {
             Me.Log(text);
         }
 
+        private void MainWindow_Closed(object? sender, EventArgs e) {
+            Dispose();
+        }
+
+
         protected virtual void Dispose(bool disposing) {
             if (!disposedValue) {
                 if (disposing) {
-                    // TODO: dispose managed state (managed objects)
+                    // dispose managed state (managed objects)
                     Sounder?.Dispose();
                     MidiInput?.Dispose();
-
                 }
 
-                // TODO: free unmanaged resources (unmanaged objects) and override finalizer
+                // free unmanaged resources (unmanaged objects) and override finalizer
+                AudioOut?.Dispose(); // really needs to be disposed (in case might hold onto ASIO)
 
-                // TODO: set large fields to null
+                // set large fields to null
                 Sounder = null;
+                AudioOut = null;
                 MidiInput = null;
                 Me = null;
 
@@ -127,5 +156,6 @@ namespace MorseKeyer {
             Dispose(disposing: true);
             GC.SuppressFinalize(this);
         }
+
     }
 }

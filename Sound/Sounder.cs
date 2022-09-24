@@ -16,66 +16,27 @@ namespace MorseKeyer.Sound
 {
     public class Sounder : IDisposable {
 
-        private int Latency = 30;
-        float Volume = 0.2f;
+        AudioOut AudioOut;
+        public WaveFormat? Format => AudioOut?.Format;
 
-        IWavePlayer? OutDevice; // DirectSoundOut or AsioOut
-        WaveFormat? Format;
         SignalGenerator? Sine;
         SignalGenerator? Sine2;
         SignalGenerator? Sine3;
 
+        float Volume = 0.2f;
         //List<AdsrSampleProvider> AdsrList = new();
         AdsrSampleProvider? Adsr;
-        MixingSampleProvider? Mixer;
+        MixingSampleProvider? Mixer => AudioOut?.Mixer;
 
         private bool disposedValue;
 
-
-
-        public Sounder(int latency = 50) {
-            Latency = latency;
+        public Sounder(AudioOut audioOut) {
+            AudioOut = audioOut;
         }
 
         public void Enable() {
             // start running.
             try {
-                //int defaultRate = 44100; 
-                int defaultRate = 48000; 
-                int sampleRate = defaultRate;
-
-                //examples:
-                //DUO-CAPTURE EX
-                //Voicemeeter AUX Virtual ASIO
-                //Voicemeeter Insert Virtual ASIO
-                //Voicemeeter Potato Insert Virtual ASIO
-                //Voicemeeter VAIO3 Virtual ASIO  // ok?
-                //Voicemeeter Virtual ASIO
-
-                //var test = "DUO-CAPTURE EX"; // works for ASIO, and now can unload
-                var test = "Voicemeeter AUX Virtual ASIO";
-                if (AsioOut.GetDriverNames().Any(d => d == test)) {
-                    OutDevice = new AsioOut(test);
-                    MainWindow.Debug($"asio set ({test}; device:{OutDevice}; format:{OutDevice?.OutputWaveFormat?.ToString() ?? "null"}): " + OutDevice?.ToString());
-                } else {
-                    OutDevice = new DirectSoundOut(Latency);
-                }
-
-                int defaultChannels = 2; // 1 works but will be left only
-
-                //note: OutDevice.OutputWaveFormat is null until after Init(); but then it's too late to get its default (especially for asio)
-
-                sampleRate = OutDevice?.OutputWaveFormat?.SampleRate ?? defaultRate;
-                if (sampleRate == 0) sampleRate = defaultRate;
-                int channels = OutDevice?.OutputWaveFormat?.Channels ?? defaultChannels;
-                if (channels == 0) channels = defaultChannels;
-
-                Format = OutDevice?.OutputWaveFormat 
-                    ?? WaveFormat.CreateIeeeFloatWaveFormat(sampleRate, channels);
-                //Mixer = new MixingSampleProvider(44100, 2);
-                //Mixer = new MixingSampleProvider(Format);
-
-                MainWindow.Debug($"1. Format sampleRate/channels (Device: {OutDevice?.OutputWaveFormat?.ToString()} | {OutDevice?.OutputWaveFormat?.SampleRate}/{OutDevice?.OutputWaveFormat?.Channels}): {Format} => {Format.SampleRate}/{Format.Channels}");
 
                 Sine = new SignalGenerator(Format.SampleRate, channel: 1) {
                     Gain = Volume,
@@ -93,87 +54,15 @@ namespace MorseKeyer.Sound
                     Type = SignalGeneratorType.Sin
                 };
 
-                Mixer = new MixingSampleProvider(Format);
-                Mixer.ReadFully = true;
-                OutDevice?.Init(Mixer);
-                OutDevice?.Play();
-
-                MainWindow.Debug($"2. Format sampleRate/channels (Device: {OutDevice?.OutputWaveFormat?.ToString()} | {OutDevice?.OutputWaveFormat?.SampleRate}/{OutDevice?.OutputWaveFormat?.Channels}): {Format} => {Format.SampleRate}/{Format.Channels}");
+                //MainWindow.Debug($"2. Format sampleRate/channels (Device: {OutDevice?.OutputWaveFormat?.ToString()} | {OutDevice?.OutputWaveFormat?.SampleRate}/{OutDevice?.OutputWaveFormat?.Channels}): {Format} => {Format.SampleRate}/{Format.Channels}");
 
             } catch (Exception e) {
-                // When "DUO-CAPTURE EX" is busy because VoiceMeeter is hogging it:
-                // (System.InvalidOperationException)
-                // Message == "Can not found a device. Please connect the device."
 
-                // When SampleRate set to 44100 instead of 48000 on "Voicemeeter AUX Virtual ASIO"
-                // (NAudio.Wave.Asio.AsioException)
-                // Message == "Error code [ASE_NoClock] while calling ASIO method <setSampleRate>, "
-
-                // (System.ArgumentException): "SampleRate is not supported"
-                // when DUO-CAPTURE EX set to 44100 instead of 44000
-
-                string err = $"driverCreateException ({e?.GetType()}): " + e?.Message?.ToString();
-                Console.WriteLine(err);
-                MainWindow.Debug(err);
-                return;
+                string err = $"sounder enable exception ({e?.GetType()}): " + e?.Message?.ToString();
             }
 
         }
 
-        public IEnumerable<string> Devices() {
-            // https://github.com/naudio/NAudio/blob/master/Docs/EnumerateOutputDevices.md
-            for (int n = -1; n < WaveOut.DeviceCount; n++) {
-                var caps = WaveOut.GetCapabilities(n);
-                //Console.WriteLine($"{n}: {caps.ProductName}");
-                yield return $"wave: {caps.ProductName}";
-            }
-
-            foreach (var dev in DirectSoundOut.Devices) {
-                yield return $"DirectSound: {dev.Guid} {dev.ModuleName} {dev.Description}";
-            }
-
-            var enumerator = new MMDeviceEnumerator();
-            foreach (var wasapi in enumerator.EnumerateAudioEndPoints(DataFlow.Render, DeviceState.Active)) {
-                yield return $"wasapi: {wasapi.DataFlow} {wasapi.FriendlyName} {wasapi.DeviceFriendlyName} {wasapi.State}";
-            }
-
-            foreach (var asio in AsioOut.GetDriverNames()) {
-                // includes disconnected devices, e.g. 
-                // DUO-CAPTURE EX
-                // Focusrite USB ASIO
-                // Realtek ASIO
-                MainWindow.Debug(asio);
-                yield return $"asio: {asio}";
-            }
-
-            //TODO: VBAN (voicemeeter UDP)
-        }
-
-        public void DeviceInfoDebug() {
-            // Using Windows Management Objects to get hold of details of the sound devices installed.
-            // This doesn't map specifically to any of the NAudio output device types, but can be a source of useful information
-
-            var objSearcher = new ManagementObjectSearcher(
-                   "SELECT * FROM Win32_SoundDevice");
-
-            var objCollection = objSearcher.Get();
-            foreach (var d in objCollection) {
-                MainWindow.Debug($"=====DEVICE {d}====");
-                foreach (var p in d.Properties) {
-                    MainWindow.Debug($"{p.Name}:{p.Value}");
-                }
-            }
-            MainWindow.Debug("=========");
-
-        }
-
-        public void SetDevice(string deviceName) {
-            //TODO
-            if (deviceName.StartsWith("asio") && deviceName.Contains("DUO-CAPTURE")) {
-                // testing DUO-CAPTURE EX
-
-            }
-        }
 
         public void DitKeyDown() {
             //mainOutput
@@ -225,21 +114,16 @@ namespace MorseKeyer.Sound
                 if (disposing) {
                     // TODO: dispose managed state (managed objects)
 
-                    //Adsr?.Stop();
+                    Adsr?.Stop();
                     //Mixer?.RemoveAllMixerInputs(); // probably not needed here
-                    //OutDevice?.Stop();
-                    OutDevice?.Dispose(); // crash?
-
-                    //if (OutDevice is AsioOut asioOut) { }
-                    //if (OutDevice is DirectSoundOut directSoundOut) { }
 
                 }
 
                 // TODO: free unmanaged resources (unmanaged objects) and override finalizer
 
                 // TODO: set large fields to null
-                OutDevice = null;
-                Mixer = null;
+                AudioOut = null;
+                //Mixer = null;
                 Adsr = null;
                 Sine = null;
 

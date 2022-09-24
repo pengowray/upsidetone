@@ -14,12 +14,13 @@ namespace VirtualMorseKeyer.MidiMorse {
 
         // https://github.com/naudio/NAudio/blob/master/Docs/MidiInAndOut.md
 
-        Sounder Sounder;
+        Sounder? Sounder;
         MidiIn? Midi;
         private bool disposedValue;
 
-        public void Enable(Sounder sounder) {
-            Sounder = sounder ?? new Sounder();
+        public void Enable(Sounder sounder = null) {
+            //Sounder = sounder ?? new Sounder();
+            Sounder = sounder;
             //Sounder.Enable();
         }
 
@@ -27,6 +28,11 @@ namespace VirtualMorseKeyer.MidiMorse {
             for (int device = 0; device < MidiIn.NumberOfDevices; device++) {
                 yield return MidiIn.DeviceInfo(device).ProductName;
             }
+        }
+
+        public void SetSounder(Sounder sounder) {
+            //Note: MidiInput doesn't manage Sounder and doesn't dispose of it
+            Sounder = sounder;
         }
 
         public bool SelectDevice(string selectedDevice) {
@@ -73,9 +79,9 @@ namespace VirtualMorseKeyer.MidiMorse {
         private void MidiIn_MessageReceived(object? sender, MidiInMessageEventArgs e) {
             //MainWindow.Debug(e?.ToString()); // can't debug here, wrong thread
             if (e?.MidiEvent?.CommandCode == MidiCommandCode.NoteOn) {
-                Sounder.StraightKeyDown();
+                Sounder?.StraightKeyDown();
             } else if (e?.MidiEvent?.CommandCode == MidiCommandCode.NoteOff) {
-                Sounder.StraightKeyUp();
+                Sounder?.StraightKeyUp();
             }
         }
 
@@ -92,6 +98,8 @@ namespace VirtualMorseKeyer.MidiMorse {
 
                 // TODO: free unmanaged resources (unmanaged objects) and override finalizer
                 // TODO: set large fields to null
+
+                //Note: MidiInput doesn't manage Sounder and doesn't dispose of it
                 Sounder = null; // let something else dispose it
                 Midi?.Dispose();
 
@@ -111,5 +119,6 @@ namespace VirtualMorseKeyer.MidiMorse {
             Dispose(disposing: true);
             GC.SuppressFinalize(this);
         }
+
     }
 }

@@ -1,7 +1,9 @@
-﻿using MorseKeyer.Sound;
+﻿using IPrompt;
+using MorseKeyer.Sound;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Printing;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
@@ -20,6 +22,8 @@ namespace MorseKeyer {
     /// Interaction logic for MainWindow.xaml
     /// </summary>
     public partial class MainWindow : Window, IDisposable {
+
+        int Latency = 90;
 
         AudioOut AudioOut;
         Sounder Sounder;
@@ -50,13 +54,17 @@ namespace MorseKeyer {
 
         private Sounder GetOrCreateSounder() {
             if (Sounder == null) {
-                var selected = AudioOutputSelect.SelectedValue as string;
+                string? selected = AudioOutputSelect.SelectedValue as string; // ok if null
 
                 AudioOut = new AudioOut();
-                AudioOut.Enable(selected); //TODO: latency option
+                AudioOut.Enable(selected, Latency); //TODO: latency option
                 Sounder = new Sounder(AudioOut);
                 Sounder.Enable();
+
                 MidiInput.SetSounder(Sounder);
+
+                DeviceInfoText.Content = AudioOut?.OutDevice?.OutputWaveFormat?.ToString() ?? "";
+
 
                 //AudioOut.DeviceInfoDebug();
             }
@@ -70,16 +78,22 @@ namespace MorseKeyer {
             Debug("success: " + success);
         }
 
-        private void AudioOutputSelect_SelectionChanged(object sender, SelectionChangedEventArgs e) {
+        void ReloadAudioDevice() {
             var selected = AudioOutputSelect.SelectedValue as string;
             Debug("changing audio to: " + selected);
+
             AudioOut?.Dispose();
             Sounder?.Dispose();
             AudioOut = null;
             Sounder = null;
             GetOrCreateSounder(); // create a new sounder immediately so Midi can talk to it
 
-            //TODO: make a sounder wrapper for midi etc to keep pressing buttons on even when audio device changed?
+            //TODO: make a sounder wrapper/indirection, for midi etc to keep pressing buttons on even when audio device changed?
+            //...Or just let AudioOut change on sounder
+        }
+
+        private void AudioOutputSelect_SelectionChanged(object sender, SelectionChangedEventArgs e) {
+            ReloadAudioDevice();
         }
 
 
@@ -157,5 +171,17 @@ namespace MorseKeyer {
             GC.SuppressFinalize(this);
         }
 
+        private void AudioOutOptions_Button_Click(object sender, RoutedEventArgs e) {
+            // latency dialog
+
+            string result = IInputBox.Show("Desired Latency (ms):\n-1 for default.\nIgnored for ASIO drivers.", defaultResponse: Latency.ToString());
+            if (result != null && int.TryParse(result, out int val)) {
+                if (val >= -1 && val < 10_000) { // todo: max value? 10s probably too much
+                    Latency = val;
+
+                    ReloadAudioDevice();
+                }
+            }
+        }
     }
 }

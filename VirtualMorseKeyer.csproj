@@ -8,6 +8,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="IPrompt" Version="1.0.1" />
     <PackageReference Include="ManyMouseSharp" Version="1.0.7" />
     <PackageReference Include="NAudio" Version="2.1.0" />
     <PackageReference Include="NAudio.Midi" Version="2.1.0" />

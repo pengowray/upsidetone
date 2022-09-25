@@ -15,7 +15,7 @@ using System.Diagnostics;
 using System.Xml.Linq;
 //using NWaves.Audio;
 
-namespace MorseKeyer.Sound
+namespace UpSidetone.Sound
 {
     public class AudioOut : IDisposable {
 

@@ -12,7 +12,7 @@ using System.Windows.Forms;
 using System.Management;
 //using NWaves.Audio;
 
-namespace MorseKeyer.Sound
+namespace UpSidetone.Sound
 {
     public class Sounder : IDisposable {
 

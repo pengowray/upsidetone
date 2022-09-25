@@ -1,5 +1,5 @@
 ﻿using IPrompt;
-using MorseKeyer.Sound;
+using UpSidetone.Sound;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -18,7 +18,7 @@ using System.Windows.Shapes;
 using VirtualMorseKeyer.KeybIn;
 using VirtualMorseKeyer.MidiMorse;
 
-namespace MorseKeyer {
+namespace UpSidetone {
     /// <summary>
     /// Interaction logic for MainWindow.xaml
     /// </summary>

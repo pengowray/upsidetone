@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace MorseKeyer.Mouse {
+namespace UpSidetone.Mouse {
 
     internal class MouseKeyer {
 

@@ -1,4 +1,4 @@
-﻿using MorseKeyer.Sound;
+﻿using UpSidetone.Sound;
 using System;
 using System.Collections.Generic;
 using System.Linq;

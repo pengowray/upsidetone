@@ -1,5 +1,5 @@
-﻿using MorseKeyer;
-using MorseKeyer.Sound;
+﻿using UpSidetone;
+using UpSidetone.Sound;
 using NAudio.Midi;
 using System;
 using System.Collections.Generic;

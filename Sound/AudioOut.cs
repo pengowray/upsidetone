@@ -23,6 +23,7 @@ namespace MorseKeyer.Sound
 
         static readonly int[] FREQS = { 44100, 48000, 88200, 96000, 176400, 192000 };
         const string DEFAULT_AUDIO = "(default)";
+        const string NONE_LABEL = "(none)";
         const string PRE_WAVE = "WAVE: ";
         const string PRE_DS = "DS: ";
         const string PRE_WASAPI = "WASAPI: ";
@@ -76,12 +77,18 @@ namespace MorseKeyer.Sound
                 try {
                     OutDevice = new DirectSoundOut(Latency);
                     MainWindow.Debug($"{DEFAULT_AUDIO} Found.");
-
                     return;
+
                 } catch (Exception e) {
                     MainWindow.Debug("Failed to set audio to default");
                     return;
                 }
+
+            } else if (deviceName == NONE_LABEL) {
+                OutDevice?.Dispose();
+                OutDevice = null;
+                return;
+
             } else if (deviceName.StartsWith(PRE_WAVE)) {
                 string name = deviceName.Substring(PRE_WAVE.Length).Trim();
                 for (int n = -1; n < WaveOut.DeviceCount; n++) {
@@ -288,6 +295,7 @@ namespace MorseKeyer.Sound
             // https://github.com/naudio/NAudio/blob/master/Docs/EnumerateOutputDevices.md
 
             yield return DEFAULT_AUDIO;
+            yield return NONE_LABEL;
 
             for (int n = -1; n < WaveOut.DeviceCount; n++) {
                 var caps = WaveOut.GetCapabilities(n);

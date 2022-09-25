@@ -50,6 +50,9 @@ namespace MorseKeyer {
             foreach (var device in MidiInput.DeviceNames()) {
                 MidiSelect.Items.Add(device);
             }
+
+            AudioOutputSelect.SelectedIndex = 0;
+            MidiSelect.SelectedIndex = 0;
         }
 
         private Sounder GetOrCreateSounder() {

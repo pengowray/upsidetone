@@ -18,6 +18,8 @@ namespace VirtualMorseKeyer.MidiMorse {
         MidiIn? Midi;
         private bool disposedValue;
 
+        const string NONE_LABEL = "(none)";
+
         public void Enable(Sounder sounder = null) {
             //Sounder = sounder ?? new Sounder();
             Sounder = sounder;
@@ -25,6 +27,9 @@ namespace VirtualMorseKeyer.MidiMorse {
         }
 
         public IEnumerable<string> DeviceNames() {
+
+            yield return NONE_LABEL; // "(none")
+
             for (int device = 0; device < MidiIn.NumberOfDevices; device++) {
                 yield return MidiIn.DeviceInfo(device).ProductName;
             }
@@ -38,7 +43,7 @@ namespace VirtualMorseKeyer.MidiMorse {
         public bool SelectDevice(string selectedDevice) {
             // returns true on success
 
-            if (string.IsNullOrEmpty(selectedDevice)) {
+            if (string.IsNullOrEmpty(selectedDevice) || selectedDevice == NONE_LABEL) {
                 SelectDevice(-1);
                 return false;
             }

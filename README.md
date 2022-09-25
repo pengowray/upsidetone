@@ -2,7 +2,7 @@
 
 by Pengo Wray [AA9GO]
 
-Low latency morse code sounder / oscillator / "keyer" / straight key beeper.
+Low latency morse code oscillator. Might make it a keyer later.
 
 ![image](https://user-images.githubusercontent.com/800133/192145002-a4ffde78-d4ef-469f-8a21-27c6ac3b8d66.png)
 
@@ -14,7 +14,7 @@ Low latency morse code sounder / oscillator / "keyer" / straight key beeper.
 * Test latency of your audio devices (e.g. use a recording device to measure the time from mouse click to beep)
 * Start of a general purpose utility, CW hardware and software.
 
-#Motivation
+# Motivation
 
 UpSidetone was created so I could practice keying morse code with a straight key connected up to my Windows PC (via a cheap modified USB mouse), without buying specialized hardware (which has high shipping times and costs to my home in Australia). It's basic, but it's now at a point where people other than me might also find a use for it.
 
@@ -39,4 +39,14 @@ In the short term, I'd like to add support for various keying modes (Iambic A + 
 
 * ASIO support (recommended if available). Supports the various Windows audio output APIs, including ASIO.
 * Choose latency for audio drivers (WaveOut / DirectSound / WASAPI)
-* Automatically chooses the lowest sample rate for the device (Minimum: 8,000 samples/second). (TODO: preferred sample rate option)
+* Automatically chooses the lowest sample rate for the device (Minimum: 8,000 samples/second). 
+
+TODO:
+
+* Set frequency
+* Volume slider
+* Keyer — keying modes — Iambic A + B, Ultimatic, bug, etc
+* More UI/UX — hide debug text, more user messages, etc.
+* Preferred sample rate option
+* Save settings
+* Much more in my notes

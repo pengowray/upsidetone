@@ -66,15 +66,14 @@ namespace MorseKeyer {
                 string? selected = AudioOutputSelect.SelectedValue as string; // ok if null
 
                 AudioOut = new AudioOut();
-                AudioOut.Enable(selected, Latency); //TODO: latency option
+                AudioOut.Enable(selected, Latency);
                 Sounder = new Sounder(AudioOut);
                 Sounder.Enable();
 
                 MidiInput?.SetSounder(Sounder);
                 KeyboardInput?.SetSounder(Sounder);
 
-                DeviceInfoText.Content = AudioOut?.OutDevice?.OutputWaveFormat?.ToString() ?? "";
-
+                DeviceInfoText.Text = AudioOut?.GetReport() ?? "";
 
                 //AudioOut.DeviceInfoDebug();
             }
@@ -192,7 +191,10 @@ namespace MorseKeyer {
             if (result != null && int.TryParse(result, out int val)) {
                 if (val >= -1 && val < 10_000) { // todo: max value? 10s probably too much
                     Latency = val;
+                    ReloadAudioDevice();
 
+                } else if (val <= -1) {
+                    Latency = -1;
                     ReloadAudioDevice();
                 }
             }

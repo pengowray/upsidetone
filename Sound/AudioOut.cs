@@ -21,7 +21,13 @@ namespace MorseKeyer.Sound
 
         // creates and holds onto the audio device (IWavePlayer) and Mixer
 
-        static readonly int[] FREQS = { 44100, 48000, 88200, 96000, 176400, 192000, 384000, 22500 };
+        //static readonly int[] PREF_FREQS = { 44100, 48000, 88200, 96000, 176400, 192000, 352800, 384000, 32000, 22500, 16000, 11025, 8000};
+
+        //test
+        static readonly int[] PREF_FREQS = { 8000, 11025, 16000, 22500, 32000, 44100, 48000, 88200, 96000, 176400, 192000, 352800, 384000 };
+
+        static readonly int[] NORMAL_FREQS = { 8000, 11025, 16000, 22500, 32000, 44100, 48000, 88200, 96000, 176400, 192000, 352800, 384000 };
+
         const string DEFAULT_AUDIO = "(default)";
         const string NONE_LABEL = "(none)";
         const string PRE_WAVE = "WAVE: ";
@@ -29,7 +35,8 @@ namespace MorseKeyer.Sound
         const string PRE_WASAPI = "WASAPI: ";
         const string PRE_ASIO = "ASIO: ";
 
-        private int Latency = 90;
+        private int DesiredLatency = 90;
+        private int ReportLatency = 0; // Latency used when creating OutDevice; For reporting back to the user.
 
         public IWavePlayer? OutDevice; // DirectSoundOut or AsioOut
         public WaveFormat? Format;
@@ -43,14 +50,16 @@ namespace MorseKeyer.Sound
         public AudioOut() {
         }
 
-        public void Enable(string? deviceName = null, int latency = -1, int prefSampleRate = 48000) {
+        public void Enable(string? deviceName = null, int requestedLatency = -1, int prefSampleRate = 48000) {
 
             DeviceName = deviceName;
 
-            if (latency <= 0) {
+            if (requestedLatency <= 0) {
                 //Latency = 90; // leave default
+                DesiredLatency = -1;
+
             } else {
-                Latency = latency;
+                DesiredLatency = requestedLatency;
             }
 
             PrefSampleRate = prefSampleRate;
@@ -60,6 +69,53 @@ namespace MorseKeyer.Sound
 
             InitDeviceAndMixer();
         }
+
+        public string GetReport() {
+            string waveFormat = OutDevice?.OutputWaveFormat?.ToString() ?? "";
+            return waveFormat + "\n" + GetLatencyReport();
+        }
+
+        public string GetLatencyReport() {
+            if (OutDevice == null) {
+                return "";
+            }
+
+            if (OutDevice is DirectSoundOut directSoundOut) {
+                if (ReportLatency <= 0) return "";
+                return $"Latency: {ReportLatency}ms" + ApproxSamples();
+            }
+            if (OutDevice is WasapiOut wasapiOut) {
+                if (ReportLatency <= 0) return "";
+                return $"Latency: {ReportLatency}ms" + ApproxSamples();
+            }
+            if (OutDevice is WaveOut waveOut) {
+                if (ReportLatency <= 0) return "";
+                return $"WaveOut Latency: {waveOut.DesiredLatency}ms{ApproxSamples()}; Buffers: {waveOut.NumberOfBuffers}";
+            }
+            if (OutDevice is AsioOut asioOut) {
+                int sampleRate = asioOut?.OutputWaveFormat?.SampleRate ?? 0;
+                if (sampleRate <= 0) return "";
+                float latencySeconds = 1.0f * asioOut.PlaybackLatency / sampleRate;
+                return $"ASIO Latency: {asioOut.PlaybackLatency} samples [{latencySeconds*1000.0f:N2}ms]";
+            }
+
+            return "";
+        }
+
+        private string ApproxSamples() {
+            if (ReportLatency <= 0) {
+                return "";
+            }
+
+            int sampleRate = OutDevice?.OutputWaveFormat?.SampleRate ?? 0;
+            if (sampleRate <= 0) {
+                return "";
+            }
+
+            int samples = (sampleRate * ReportLatency) / 1000;
+            return $" [approx {samples} samples]";
+        }
+
         private void CreateDevice() {
             //int defaultRate = 44100; 
 
@@ -75,7 +131,13 @@ namespace MorseKeyer.Sound
 
             if (string.IsNullOrWhiteSpace(deviceName) || deviceName == DEFAULT_AUDIO) {
                 try {
-                    OutDevice = new DirectSoundOut(Latency);
+                    if (DesiredLatency > 0) {
+                        ReportLatency = DesiredLatency;
+                        OutDevice = new DirectSoundOut(DesiredLatency);
+                    } else {
+                        ReportLatency = 40;
+                        OutDevice = new DirectSoundOut();
+                    }
                     MainWindow.Debug($"{DEFAULT_AUDIO} Found.");
                     return;
 
@@ -87,6 +149,7 @@ namespace MorseKeyer.Sound
             } else if (deviceName == NONE_LABEL) {
                 OutDevice?.Dispose();
                 OutDevice = null;
+                ReportLatency = 0;
                 return;
 
             } else if (deviceName.StartsWith(PRE_WAVE)) {
@@ -94,12 +157,18 @@ namespace MorseKeyer.Sound
                 for (int n = -1; n < WaveOut.DeviceCount; n++) {
                     var caps = WaveOut.GetCapabilities(n);
                     //TODO: check caps.ProductGuid too
+                    //caps.SupportsWaveFormat(SupportedWaveFormat.WAVE_FORMAT_2M08) // TODO: check supported formats
+                    //caps.SupportsPlaybackRateControl // TODO
+
                     if (caps.ProductName == name) { // case 
                         //TODO: not sure if this is how to initiate WaveOut
                         var outDev = new WaveOut();
                         outDev.DeviceNumber = n;
-                        if (Latency > 0) {
-                            outDev.DesiredLatency = Latency;
+                        if (DesiredLatency > 0) {
+                            ReportLatency = DesiredLatency;
+                            outDev.DesiredLatency = DesiredLatency;
+                        } else {
+                            ReportLatency = 300;
                         }
                         OutDevice = outDev;
                         MainWindow.Debug($"{PRE_WAVE}Found: {name}");
@@ -112,6 +181,7 @@ namespace MorseKeyer.Sound
                 var parts = name.Split(" | ");
                 if (parts == null || parts.Length <= 0) {
                     MainWindow.Debug($"{PRE_DS}Not found (name or guid missing)");
+                    ReportLatency = 0;
                     return;
                 }
                 // ModuleName | Description | Guid
@@ -122,10 +192,12 @@ namespace MorseKeyer.Sound
                     foreach (var item in DirectSoundOut.Devices) {
                         var itemGuid = item.Guid.ToString().Trim().ToLowerInvariant();
                         if (itemGuid == guid) {
-                            if (Latency <= 0) {
+                            if (DesiredLatency <= 0) {
+                                ReportLatency = 40; // default for DirectSoundOut
                                 OutDevice = new DirectSoundOut(item.Guid);
                             } else {
-                                OutDevice = new DirectSoundOut(item.Guid, Latency);
+                                ReportLatency = DesiredLatency;
+                                OutDevice = new DirectSoundOut(item.Guid, DesiredLatency);
                             }
                             //MainWindow.Debug($"{PRE_DS}Found: {name}");
                             return;
@@ -137,10 +209,12 @@ namespace MorseKeyer.Sound
                 if (!string.IsNullOrWhiteSpace(moduleName)) {
                     foreach (var item in DirectSoundOut.Devices) {
                         if (item.ModuleName == moduleName) {
-                            if (Latency <= 0) {
+                            if (DesiredLatency <= 0) {
+                                ReportLatency = 40; // default for DirectSoundOut
                                 OutDevice = new DirectSoundOut(item.Guid);
                             } else {
-                                OutDevice = new DirectSoundOut(item.Guid, Latency);
+                                ReportLatency = DesiredLatency;
+                                OutDevice = new DirectSoundOut(item.Guid, DesiredLatency);
                             }
                             return;
                         }
@@ -166,11 +240,12 @@ namespace MorseKeyer.Sound
                 if (wasapi != null) {
                     // note: useEventSync: true is the default for "new WasapiOut()"
                     // 200ms is the default latency for "new WasapiOut()"
-                    if (Latency > 0) {
-                        OutDevice = new WasapiOut(wasapi, shareMode: AudioClientShareMode.Shared, useEventSync: true, Latency);
+                    if (DesiredLatency > 0) {
+                        ReportLatency = DesiredLatency;
+                        OutDevice = new WasapiOut(wasapi, shareMode: AudioClientShareMode.Shared, useEventSync: true, DesiredLatency);
                     } else {
-                        //int defaultLatency = 200;
-                        int defaultLatency = 150;
+                        int defaultLatency = 150; // actual default is 200 for wasapi
+                        ReportLatency = defaultLatency;
                         OutDevice = new WasapiOut(wasapi, shareMode: AudioClientShareMode.Shared, useEventSync: true, defaultLatency);
                     }
                     return;
@@ -186,6 +261,7 @@ namespace MorseKeyer.Sound
                     try {
                         // no latency setting
                         var asioOut = new AsioOut(name);
+                        ReportLatency = 0; // reported separately for ASIO
                         OutDevice = asioOut;
                         MainWindow.Debug($"{PRE_ASIO} found: {name}");
                         //MainWindow.Debug($"asio set ({name}; device:{OutDevice}; format:{OutDevice?.OutputWaveFormat?.ToString() ?? "null"}): " + OutDevice?.ToString());
@@ -196,6 +272,7 @@ namespace MorseKeyer.Sound
                 }
             }
 
+            ReportLatency = 0;
             MainWindow.Debug($"Error. Unrecognized: {deviceName}");
 
         }
@@ -217,10 +294,15 @@ namespace MorseKeyer.Sound
             int channels = defaultChannels;
 
             //TODO: try preferred sampleRate first
-            foreach (var freq in FREQS) {
-                try {
-                    CreateDevice();
+            AsioOut? asioOut = OutDevice as AsioOut;
 
+            foreach (var freq in PREF_FREQS) {
+                try {
+                    if (asioOut != null && !asioOut.IsSampleRateSupported(freq)) {
+                        continue;
+                    }
+
+                    CreateDevice();
                     //Format = OutDevice?.OutputWaveFormat ?? WaveFormat.CreateIeeeFloatWaveFormat(sampleRate, channels); // still gets an uncaught null reference exception
                     Format = WaveFormat.CreateIeeeFloatWaveFormat(freq, channels);
                     Mixer = new MixingSampleProvider(Format);

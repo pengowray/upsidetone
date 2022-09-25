@@ -52,7 +52,7 @@ namespace VirtualMorseKeyer.MidiMorse {
             var devices = DeviceNames().ToArray();
             for (int i = 0; i < devices.Length; i++) {
                 if (devices[i] == selectedDevice) {
-                    return SelectDevice(i);
+                    return SelectDevice(i - 1);
                 }
             }
 

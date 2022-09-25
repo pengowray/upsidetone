@@ -111,35 +111,68 @@ namespace MorseKeyer.Sound
                 string moduleName = parts[0];
                 string guid = (parts.Length >= 2) ? parts[1].Trim().ToLowerInvariant() : moduleName; // if missing "|" separators, try the whole device name as a guid
 
-                foreach (var item in DirectSoundOut.Devices) {
-                    if (item.Guid.ToString().Trim().ToLowerInvariant() == guid) {
-                        if (Latency <= 0) {
-                            OutDevice = new DirectSoundOut(item.Guid);
-                        } else {
-                            OutDevice = new DirectSoundOut(item.Guid, Latency);
+                if (!string.IsNullOrWhiteSpace(guid)) {
+                    foreach (var item in DirectSoundOut.Devices) {
+                        var itemGuid = item.Guid.ToString().Trim().ToLowerInvariant();
+                        if (itemGuid == guid) {
+                            if (Latency <= 0) {
+                                OutDevice = new DirectSoundOut(item.Guid);
+                            } else {
+                                OutDevice = new DirectSoundOut(item.Guid, Latency);
+                            }
+                            //MainWindow.Debug($"{PRE_DS}Found: {name}");
+                            return;
                         }
-                        //MainWindow.Debug($"{PRE_DS}Found: {name}");
-                        return;
                     }
                 }
 
                 // guid not found, now check moduleName
-                foreach (var item in DirectSoundOut.Devices) {
-                    if (item.ModuleName == moduleName) {
-                        if (Latency <= 0) {
-                            OutDevice = new DirectSoundOut(item.Guid);
-                        } else {
-                            OutDevice = new DirectSoundOut(item.Guid, Latency);
+                if (!string.IsNullOrWhiteSpace(moduleName)) {
+                    foreach (var item in DirectSoundOut.Devices) {
+                        if (item.ModuleName == moduleName) {
+                            if (Latency <= 0) {
+                                OutDevice = new DirectSoundOut(item.Guid);
+                            } else {
+                                OutDevice = new DirectSoundOut(item.Guid, Latency);
+                            }
+                            return;
                         }
-                        return;
                     }
                 }
 
             } else if (deviceName.StartsWith(PRE_WASAPI)) {
                 string name = deviceName.Substring(PRE_WASAPI.Length);
-                MainWindow.Debug($"{PRE_ASIO} not yet implemented NYI: {name}");
+                //MainWindow.Debug($"{PRE_WASAPI} not yet implemented NYI: {name}");
 
+                var parts = name.Split(" | ");
+                if (parts == null || parts.Length <= 0) {
+                    MainWindow.Debug($"{PRE_WASAPI}Not found (name missing)");
+                    return;
+                }
+                //FriendlyName} | {wasapi.DeviceFriendlyName
+                string? friendlyName = parts[0];
+                string? deviceFriendlyName = (parts.Length >= 2) ? parts[1]?.Trim() : friendlyName;
+
+                var enumerator = new MMDeviceEnumerator();
+                var wasapi = enumerator.EnumerateAudioEndPoints(DataFlow.Render, DeviceState.Active)
+                    .FirstOrDefault(d => d.FriendlyName == friendlyName || d.DeviceFriendlyName == deviceFriendlyName);
+                if (wasapi != null) {
+                    // note: useEventSync: true is the default for "new WasapiOut()"
+                    // 200ms is the default latency for "new WasapiOut()"
+                    if (Latency > 0) {
+                        OutDevice = new WasapiOut(wasapi, shareMode: AudioClientShareMode.Shared, useEventSync: true, Latency);
+                    } else {
+                        //int defaultLatency = 200;
+                        int defaultLatency = 150;
+                        OutDevice = new WasapiOut(wasapi, shareMode: AudioClientShareMode.Shared, useEventSync: true, defaultLatency);
+                    }
+                    return;
+                }
+
+                MainWindow.Debug($"{PRE_WASAPI}Not found: {name}");
                 return;
+
+                
 
             } else if (deviceName.StartsWith(PRE_ASIO)) {
                 //var name = "Voicemeeter AUX Virtual ASIO"; // test
@@ -193,10 +226,19 @@ namespace MorseKeyer.Sound
                     return;
 
                 } catch (Exception e) {
-                    if (e is System.InvalidOperationException && e.Message.StartsWith("Can not found a device")) {
-                        // TODO: does this get localized?
+
+                    //'AsioException' is inaccessible due to its protection level
+                    //if ((e is System.InvalidOperationException || e.GetType().ToString() == "NAudio.Wave.Asio.AsioException") &&
+                    // screw this, just use the message
+                    if (e.Message.StartsWith("Can not found a device") || e.Message.Contains("ASE_NotPresent")) {
+
                         // When "DUO-CAPTURE EX" is busy because VoiceMeeter is hogging it:
                         // (System.InvalidOperationException): "Can not found a device. Please connect the device."
+                        // TODO: does this get localized?
+
+                        // trying to use Realtek ASIO (because needs headphones/speaker plugged in and set up)
+                        // (NAudio.Wave.Asio.AsioException): "Error code [ASE_NotPresent] while calling ASIO method <setSampleRate>, "
+
                         string err1 = $"driverCreateException ({e?.GetType()}): " + e?.Message?.ToString();
                         MainWindow.Debug(err1);
                         return;
@@ -218,9 +260,6 @@ namespace MorseKeyer.Sound
 
                     // (System.ArgumentException): "SampleRate is not supported"
                     // when DUO-CAPTURE EX set to 44100 instead of 44000
-
-                    // trying to use Realtek ASIO (maybe because nothing plugged in?)
-                    // (NAudio.Wave.Asio.AsioException): Error code [ASE_NotPresent] while calling ASIO method <setSampleRate>, 
 
                     //asio codes
                     //ASE_OK = 0,             // This value will be returned whenever the call succeeded
@@ -266,7 +305,8 @@ namespace MorseKeyer.Sound
 
             var enumerator = new MMDeviceEnumerator();
             foreach (var wasapi in enumerator.EnumerateAudioEndPoints(DataFlow.Render, DeviceState.Active)) {
-                yield return $"{PRE_WASAPI}{wasapi.DataFlow} {wasapi.FriendlyName} {wasapi.DeviceFriendlyName} {wasapi.State}";
+                //TODO: maybe use ID, or cut out GUID part from it
+                yield return $"{PRE_WASAPI}{wasapi.FriendlyName} | {wasapi.DeviceFriendlyName}";
             }
 
             foreach (var asio in AsioOut.GetDriverNames()) {

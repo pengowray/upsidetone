@@ -21,7 +21,7 @@ namespace MorseKeyer.Sound
 
         // creates and holds onto the audio device (IWavePlayer) and Mixer
 
-        static readonly int[] FREQS = { 44100, 48000, 88200, 96000, 176400, 192000 };
+        static readonly int[] FREQS = { 44100, 48000, 88200, 96000, 176400, 192000, 384000, 22500 };
         const string DEFAULT_AUDIO = "(default)";
         const string NONE_LABEL = "(none)";
         const string PRE_WAVE = "WAVE: ";
@@ -178,8 +178,6 @@ namespace MorseKeyer.Sound
 
                 MainWindow.Debug($"{PRE_WASAPI}Not found: {name}");
                 return;
-
-                
 
             } else if (deviceName.StartsWith(PRE_ASIO)) {
                 //var name = "Voicemeeter AUX Virtual ASIO"; // test

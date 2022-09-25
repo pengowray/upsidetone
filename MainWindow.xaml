@@ -6,7 +6,7 @@
         xmlns:local="clr-namespace:MorseKeyer"
         mc:Ignorable="d"
         Title="Pengo VKeyer" Height="450" Width="800">
-    <Grid>
+    <Grid PreviewKeyDown="Grid_PreviewKeyDown" PreviewKeyUp="Grid_PreviewKeyUp" LostFocus="Grid_LostFocus">
         <Grid.RowDefinitions>
             <RowDefinition Height="67*"/>
             <RowDefinition Height="150*"/>

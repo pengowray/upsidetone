@@ -15,6 +15,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using VirtualMorseKeyer.KeybIn;
 using VirtualMorseKeyer.MidiMorse;
 
 namespace MorseKeyer {
@@ -28,8 +29,11 @@ namespace MorseKeyer {
         AudioOut AudioOut;
         Sounder Sounder;
         MidiInput MidiInput;
+        KeyboardInputWPF KeyboardInput;
         static private MainWindow Me;
         private bool disposedValue;
+
+
 
         public MainWindow() {
             Me = this;
@@ -39,6 +43,8 @@ namespace MorseKeyer {
             InitializeComponent();
             MidiInput = new MidiInput();
             MidiInput.Enable(Sounder); // sounder will be null but that's ok
+
+            KeyboardInput = new KeyboardInputWPF(); //todo: Enable()
 
             //GetOrCreateSounder(); // create default?
 
@@ -64,7 +70,8 @@ namespace MorseKeyer {
                 Sounder = new Sounder(AudioOut);
                 Sounder.Enable();
 
-                MidiInput.SetSounder(Sounder);
+                MidiInput?.SetSounder(Sounder);
+                KeyboardInput?.SetSounder(Sounder);
 
                 DeviceInfoText.Content = AudioOut?.OutDevice?.OutputWaveFormat?.ToString() ?? "";
 
@@ -177,6 +184,10 @@ namespace MorseKeyer {
         private void AudioOutOptions_Button_Click(object sender, RoutedEventArgs e) {
             // latency dialog
 
+            // https://github.com/ramer/IPrompt
+
+            //TODO: use my own dialog, and add preferred bitrate
+            
             string result = IInputBox.Show("Desired Latency (ms):\n-1 for default.\nIgnored for ASIO drivers.", defaultResponse: Latency.ToString());
             if (result != null && int.TryParse(result, out int val)) {
                 if (val >= -1 && val < 10_000) { // todo: max value? 10s probably too much
@@ -185,6 +196,19 @@ namespace MorseKeyer {
                     ReloadAudioDevice();
                 }
             }
+        }
+
+        private void Grid_PreviewKeyDown(object sender, KeyEventArgs e) {
+            KeyboardInput?.KeyEvent(e);
+        }
+
+        private void Grid_PreviewKeyUp(object sender, KeyEventArgs e) {
+            KeyboardInput?.KeyEvent(e);
+        }
+
+        private void Grid_LostFocus(object sender, RoutedEventArgs e) {
+            Sounder?.StraightKeyUp();
+
         }
     }
 }

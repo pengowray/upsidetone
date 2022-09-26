@@ -30,9 +30,9 @@ namespace UpSidetone.Sound
 
         const string DEFAULT_AUDIO = "(default)";
         const string NONE_LABEL = "(none)";
-        const string PRE_WAVE = "WAVE: ";
-        const string PRE_DS = "DS: ";
-        const string PRE_WASAPI = "WASAPI: ";
+        const string PRE_WAVE = "WAVE: "; // =WDM?
+        const string PRE_DS = "DS: "; // =KS?
+        const string PRE_WASAPI = "WASAPI: "; // =MME?
         const string PRE_ASIO = "ASIO: ";
 
         private int DesiredLatency = 90;

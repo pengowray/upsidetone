@@ -121,7 +121,8 @@ namespace UpSidetone {
         private void Button_MouseDown(object sender, MouseButtonEventArgs e) {
             var sounder = GetOrCreateSounder();
             if (e.LeftButton == MouseButtonState.Pressed) {
-                Sounder?.StraightKeyDown(1);
+                //Sounder?.StraightKeyDown(1);
+                Sounder?.DitKeyDown();
             } else if (e.MiddleButton == MouseButtonState.Pressed) {
                 Sounder?.StraightKeyDown(2);
             } else if (e.RightButton == MouseButtonState.Pressed) {

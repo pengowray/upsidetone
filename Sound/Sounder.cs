@@ -10,11 +10,15 @@ using NAudio.Mixer;
 using NAudio.CoreAudioApi;
 using System.Windows.Forms;
 using System.Management;
+using System.Windows.Media.Animation;
 //using NWaves.Audio;
 
 namespace UpSidetone.Sound
 {
     public class Sounder : IDisposable {
+
+        float AttackSeconds = 0.015f;
+        float ReleaseSeconds = 0.015f;
 
         AudioOut AudioOut;
         public WaveFormat? Format => AudioOut?.Format;
@@ -64,14 +68,50 @@ namespace UpSidetone.Sound
         }
 
 
+        
         public void DitKeyDown() {
-            //mainOutput
+            float ditSeconds = 0.2f;
+            //FadeInOutSampleProvider
+            //ConcatenatingSampleProvider
+
+            if (Adsr == null) {
+                if (Sine != null) {
+                    //todo: dont allow negative time
+                    var wave = Sine.Take(TimeSpan.FromSeconds(ditSeconds - ReleaseSeconds));
+                    
+                    var waveTail = Sine.Skip(TimeSpan.FromSeconds(ditSeconds - ReleaseSeconds)).Take(TimeSpan.FromSeconds(ReleaseSeconds));
+                    var tail = new FadeInOutSampleProvider(waveTail, false);
+                    tail.BeginFadeOut(ReleaseSeconds);
+                    //new SilenceProvider(Format).take
+                    var all = new ConcatenatingSampleProvider(new[] { wave, tail });
+
+                    Adsr = new AdsrSampleProvider(all.ToMono(1, 0)) {
+                        AttackSeconds = AttackSeconds,
+                        //ReleaseSeconds = ReleaseSeconds // not used
+                    };
+
+                    //Adsr.FollowedBy(Adsr);
+                    
+                }
+
+                if (Mixer != null) {
+                    if (Mixer.WaveFormat.Channels == 2) {
+                        Mixer.AddMixerInput(Adsr.ToStereo(1, 1));
+                    } else {
+                        Mixer.AddMixerInput(Adsr);
+                    }
+                    //Mixer.MixerInputEnded += Mixer_MixerInputEnded;
+                }
+            }
+        }
+
+        private void Mixer_MixerInputEnded(object? sender, SampleProviderEventArgs e) {
+            //DitKeyDown();
         }
 
         public void StraightKeyDown(int note = 1) {
             // https://github.com/naudio/NAudio/blob/master/Docs/PlaySineWave.md
             // https://csharp.hotexamples.com/examples/NAudio.Wave/DirectSoundOut/Play/php-directsoundout-play-method-examples.html
-
 
             if (Adsr == null) {
 

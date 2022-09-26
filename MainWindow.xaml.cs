@@ -75,6 +75,11 @@ namespace UpSidetone {
 
                 DeviceInfoText.Text = AudioOut?.GetReport() ?? "";
 
+                if (AudioOut?.IsAsio() ?? false) {
+                    AsioOutputOptionsButton.IsEnabled = true;
+                } else {
+                    AsioOutputOptionsButton.IsEnabled = false;
+                }
                 //AudioOut.DeviceInfoDebug();
             }
             return Sounder;
@@ -186,7 +191,8 @@ namespace UpSidetone {
             // https://github.com/ramer/IPrompt
 
             //TODO: use my own dialog, and add preferred bitrate
-            
+            // https://www.c-sharpcorner.com/article/dialogs-in-wpf-mvvm/
+
             string result = IInputBox.Show("Desired Latency (ms):\n-1 for default.\nIgnored for ASIO drivers.", defaultResponse: Latency.ToString());
             if (result != null && int.TryParse(result, out int val)) {
                 if (val >= -1 && val < 10_000) { // todo: max value? 10s probably too much
@@ -211,6 +217,10 @@ namespace UpSidetone {
         private void Grid_LostFocus(object sender, RoutedEventArgs e) {
             Sounder?.StraightKeyUp();
 
+        }
+
+        private void AsioOutputOptionsButton_Click(object sender, RoutedEventArgs e) {
+            AudioOut?.LaunchAsioControlPanel();
         }
     }
 }

@@ -27,6 +27,7 @@
             </TextBox.Style>
         </TextBox>
         <Button Name="AudioOutputOptionsButton" Content="Options" HorizontalAlignment="Left" Height="30" Margin="325,82,0,0" VerticalAlignment="Top" Width="60" Click="AudioOutOptions_Button_Click"/>
+        <Button Name="AsioOutputOptionsButton" Content="ASIO" HorizontalAlignment="Left" Height="30" Margin="325,117,0,0" VerticalAlignment="Top" Width="60" Click="AsioOutputOptionsButton_Click" Grid.RowSpan="2"/>
 
     </Grid>
 </Window>

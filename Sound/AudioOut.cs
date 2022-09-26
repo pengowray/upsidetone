@@ -305,6 +305,10 @@ namespace UpSidetone.Sound
                     CreateDevice();
                     //Format = OutDevice?.OutputWaveFormat ?? WaveFormat.CreateIeeeFloatWaveFormat(sampleRate, channels); // still gets an uncaught null reference exception
                     Format = WaveFormat.CreateIeeeFloatWaveFormat(freq, channels);
+
+                    //TODO: when would you use ALaw or MuLaw?
+                    //Format = WaveFormat.CreateALawFormat(freq, channels); 
+
                     Mixer = new MixingSampleProvider(Format);
                     Mixer.ReadFully = true;
                     OutDevice?.Init(Mixer);
@@ -318,6 +322,7 @@ namespace UpSidetone.Sound
                     //if ((e is System.InvalidOperationException || e.GetType().ToString() == "NAudio.Wave.Asio.AsioException") &&
                     // screw this, just use the message
                     if (e.Message.StartsWith("Can not found a device") || e.Message.Contains("ASE_NotPresent")) {
+                        // error isn't with bitrate, so bail out without trying every bitrate
 
                         // When "DUO-CAPTURE EX" is busy because VoiceMeeter is hogging it:
                         // (System.InvalidOperationException): "Can not found a device. Please connect the device."
@@ -468,6 +473,26 @@ namespace UpSidetone.Sound
             // Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
             Dispose(disposing: true);
             GC.SuppressFinalize(this);
+        }
+
+        internal bool IsAsio() {
+            return OutDevice != null && OutDevice is AsioOut;
+        }
+
+        public bool LaunchAsioControlPanel() {
+            // returns true on success
+            if (OutDevice is AsioOut asioOut) {
+                try {
+                    //asioOut.DriverResetRequest();
+                    asioOut.ShowControlPanel();
+                    return true;
+                } catch (Exception e) {
+                    MainWindow.Debug($"Error launching ASIO control panel ({e.GetType()}): '{e.Message}'");
+                    //NAudio.Wave.Asio.AsioException: 'Error code [ASE_NotPresent] while calling ASIO method <controlPanel>, '
+                    return false;
+                }
+            }
+            return false;
         }
     }
 }

@@ -1,12 +1,13 @@
-﻿using UpSidetone;
-using UpSidetone.Sound;
-using NAudio.Midi;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
+
+using UpSidetone;
+using UpSidetone.Sound;
+using NAudio.Midi;
 
 namespace VirtualMorseKeyer.MidiMorse {
 
@@ -17,6 +18,7 @@ namespace VirtualMorseKeyer.MidiMorse {
         Sounder? Sounder;
         MidiIn? Midi;
         private bool disposedValue;
+        Dictionary<int, string> DownNotes = new(); // notenumber -> description
 
         const string NONE_LABEL = "(none)";
 
@@ -81,13 +83,38 @@ namespace VirtualMorseKeyer.MidiMorse {
             return true;
         }
 
+
         private void MidiIn_MessageReceived(object? sender, MidiInMessageEventArgs e) {
-            //MainWindow.Debug(e?.ToString()); // can't debug here, wrong thread
+            //MainWindow.Debug(e?.ToString()); 
             if (e?.MidiEvent?.CommandCode == MidiCommandCode.NoteOn) {
                 Sounder?.StraightKeyDown();
+
+                var info = e.MidiEvent as NoteOnEvent;
+                if (info != null) {
+                    var notenum = info.NoteNumber;
+                    var name = info.NoteName;
+                    DownNotes[notenum] = name;
+
+                    //TODO: use an event (have main window listen to update events)
+                    MainWindow.Me.RefreshPianoDisplay();
+                }
+
             } else if (e?.MidiEvent?.CommandCode == MidiCommandCode.NoteOff) {
                 Sounder?.StraightKeyUp();
+
+                var info = e.MidiEvent as NoteEvent;
+                if (info != null) {
+                    var notenum = info.NoteNumber;
+                    DownNotes.Remove(notenum);
+
+                    //TODO: use an event (have main window listen to update events)
+                    MainWindow.Me.RefreshPianoDisplay();
+                }
             }
+        }
+
+        public string? GetDownNotes() {
+            return string.Join(" ", DownNotes.OrderBy(n => n.Key).Select(n => n.Value));
         }
 
         private void MidiIn_ErrorReceived(object? sender, MidiInMessageEventArgs e) {

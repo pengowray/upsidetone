@@ -30,7 +30,7 @@ namespace UpSidetone {
         Sounder Sounder;
         MidiInput MidiInput;
         KeyboardInputWPF KeyboardInput;
-        static private MainWindow Me;
+        static public MainWindow Me { get; private set; } // Singleton (Lazy hack)
         private bool disposedValue;
 
 
@@ -121,8 +121,8 @@ namespace UpSidetone {
         private void Button_MouseDown(object sender, MouseButtonEventArgs e) {
             var sounder = GetOrCreateSounder();
             if (e.LeftButton == MouseButtonState.Pressed) {
-                //Sounder?.StraightKeyDown(1);
-                Sounder?.DitKeyDown();
+                Sounder?.StraightKeyDown(1);
+                //Sounder?.DitKeyDown();
             } else if (e.MiddleButton == MouseButtonState.Pressed) {
                 Sounder?.StraightKeyDown(2);
             } else if (e.RightButton == MouseButtonState.Pressed) {
@@ -140,11 +140,14 @@ namespace UpSidetone {
         }
 
         public void Log(string text) {
-            DebugText.Text = DebugText.Text + "\n" + text;
+            // make sure we're on our own thread
+            this.Dispatcher.Invoke(() => {
+                DebugText.Text = DebugText.Text + "\n" + text;
+            });
         }
 
         public static void Debug(string text) {
-            Me.Log(text);
+            Me?.Log(text);
         }
 
         private void MainWindow_Closed(object? sender, EventArgs e) {
@@ -222,6 +225,14 @@ namespace UpSidetone {
 
         private void AsioOutputOptionsButton_Click(object sender, RoutedEventArgs e) {
             AudioOut?.LaunchAsioControlPanel();
+        }
+
+        public void RefreshPianoDisplay() {
+            // run on main thread (if called from midi's thread)
+            this.Dispatcher.Invoke(() =>
+            {
+                MidiPianoText.Text = MidiInput?.GetDownNotes() ?? "";
+            });
         }
     }
 }

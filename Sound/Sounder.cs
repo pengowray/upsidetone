@@ -11,25 +11,48 @@ using NAudio.CoreAudioApi;
 using System.Windows.Forms;
 using System.Management;
 using System.Windows.Media.Animation;
+using NAudio.Dsp;
 //using NWaves.Audio;
 
 namespace UpSidetone.Sound
 {
+    //TODO: [Flags] ?
+    public enum Lever {
+        None,
+        StraightKey,
+        Dits,
+    }
+
+    public enum KeyerMode {
+        None,
+        StraightKey,
+        Bug,
+        //BestGuess // 
+    }
+
     public class Sounder : IDisposable {
+
+        List<Lever> Down = new(); // keys pressed and in what order
 
         float AttackSeconds = 0.015f;
         float ReleaseSeconds = 0.015f;
+
+        const double wpm = 12.0;
+        double ditSeconds = 60.0 / (50.0 * wpm);
+
+        KeyerMode KeyerMode = KeyerMode.Bug;
 
         AudioOut AudioOut;
         public WaveFormat? Format => AudioOut?.Format;
 
         SignalGenerator? Sine;
-        SignalGenerator? Sine2;
-        SignalGenerator? Sine3;
+        SignalGenerator? Sine2; // for testing
+        SignalGenerator? Sine3; // for testing
 
         float Volume = 0.2f;
         //List<AdsrSampleProvider> AdsrList = new();
-        AdsrSampleProvider? Adsr;
+        AdsrSampleProvider? DitAdsr;
+        AdsrSampleProvider? StraightAdsr;
         MixingSampleProvider? Mixer => AudioOut?.Mixer;
 
         private bool disposedValue;
@@ -44,17 +67,17 @@ namespace UpSidetone.Sound
 
                 Sine = new SignalGenerator(Format.SampleRate, channel: 1) {
                     Gain = Volume,
-                    Frequency = 138.5 * 3,  //650,  A major chord A, C#, E
+                    Frequency = 550, // 138.5 * 3,  //650,  A major chord A, C#, E
                     Type = SignalGeneratorType.Sin
                 };
                 Sine2 = new SignalGenerator(Format.SampleRate, channel: 1) {
                     Gain = Volume,
-                    Frequency = 164.5 * 3,
+                    Frequency = 550, // 164.5 * 3,
                     Type = SignalGeneratorType.Sin
                 };
                 Sine3 = new SignalGenerator(Format.SampleRate, channel: 1) {
                     Gain = Volume,
-                    Frequency = 220.5 * 3,
+                    Frequency = 550, // 220.5 * 3,
                     Type = SignalGeneratorType.Sin
                 };
 
@@ -67,86 +90,138 @@ namespace UpSidetone.Sound
 
         }
 
-
-        
-        public void DitKeyDown() {
-            float ditSeconds = 0.2f;
-            //FadeInOutSampleProvider
-            //ConcatenatingSampleProvider
-
-            if (Adsr == null) {
-                if (Sine != null) {
-                    //todo: dont allow negative time
-                    var wave = Sine.Take(TimeSpan.FromSeconds(ditSeconds - ReleaseSeconds));
-                    
-                    var waveTail = Sine.Skip(TimeSpan.FromSeconds(ditSeconds - ReleaseSeconds)).Take(TimeSpan.FromSeconds(ReleaseSeconds));
-                    var tail = new FadeInOutSampleProvider(waveTail, false);
-                    tail.BeginFadeOut(ReleaseSeconds);
-                    //new SilenceProvider(Format).take
-                    var all = new ConcatenatingSampleProvider(new[] { wave, tail });
-
-                    Adsr = new AdsrSampleProvider(all.ToMono(1, 0)) {
-                        AttackSeconds = AttackSeconds,
-                        //ReleaseSeconds = ReleaseSeconds // not used
-                    };
-
-                    //Adsr.FollowedBy(Adsr);
-                    
+        private void AddDownLever(Lever lever) {
+            lock (Down) {
+                if (Down.Contains(lever)) {
+                    Down.Remove(lever); // make sure it's on the end
                 }
+                Down.Add(lever);
+            }
+        }
 
-                if (Mixer != null) {
-                    if (Mixer.WaveFormat.Channels == 2) {
-                        Mixer.AddMixerInput(Adsr.ToStereo(1, 1));
-                    } else {
-                        Mixer.AddMixerInput(Adsr);
-                    }
-                    //Mixer.MixerInputEnded += Mixer_MixerInputEnded;
+        private void RemoveDownLever(Lever lever) {
+            lock (Down) {
+                if (Down.Contains(lever)) {
+                    Down.Remove(lever);
                 }
             }
         }
 
-        private void Mixer_MixerInputEnded(object? sender, SampleProviderEventArgs e) {
-            //DitKeyDown();
+
+        public void DitKeyDown(bool force = false) {
+            //FadeInOutSampleProvider
+            //ConcatenatingSampleProvider
+            //EnvelopeGenerator
+
+            if (!force && Down.LastOrDefault() == Lever.Dits) {
+                // already down
+                return;
+            }
+
+            AddDownLever(Lever.Dits);
+
+            if (true) {
+
+                if (StraightAdsr != null) {
+                    StraightAdsr.Stop();
+                    StraightAdsr = null;
+                    //TODO: add silence before dit if straight key was going?
+                }
+
+                //todo: dont allow negative time
+                var wave = Sine.Take(TimeSpan.FromSeconds(ditSeconds));
+                var faded = new FadeOutSampleProvider(wave);
+                faded.SetFadeIn(AttackSeconds * 1000);
+                //faded.SetFadeOut((ditSeconds - ReleaseSeconds) * 1000.0, ReleaseSeconds * 1000.0);
+                faded.FadeEnding(TimeSpan.FromSeconds(ReleaseSeconds), TimeSpan.FromSeconds(ditSeconds));
+                //TODO: append dit silence
+                var sil = new SilenceProvider(Format);
+
+                //var all = new ConcatenatingSampleProvider(new[] { wave, tail });
+
+                StraightAdsr = new AdsrSampleProvider(faded.ToMono(1, 0)) {
+                    //AttackSeconds = AttackSeconds,
+                    //ReleaseSeconds = ReleaseSeconds // does not get used unless stopping early
+                };
+
+                //Adsr.FollowedBy(Adsr);
+                    
+                if (Mixer != null) {
+                    if (Mixer.WaveFormat.Channels == 2) {
+                        Mixer.AddMixerInput(StraightAdsr.ToStereo(1, 1));
+                    } else {
+                        Mixer.AddMixerInput(StraightAdsr);
+                    }
+                    //Mixer.MixerInputEnded += Mixer_MixerInputEnded;
+                }
+
+                var timer = new System.Threading.Timer(DitDoneCheck, null, (int)(ditSeconds * 2000), Timeout.Infinite);
+            }
         }
 
-        public void StraightKeyDown(int note = 1) {
+        private void DitDoneCheck(Object? info) {
+            StraightAdsr = null;
+            var last = Down.LastOrDefault();
+            if (last == Lever.Dits) {
+                // dit get still down
+                DitKeyDown(force: true);
+            } else if (last == Lever.StraightKey){
+                // dit key was released and straight key is waiting
+                StraightKeyDown(1, force: true); 
+            }
+        }
+
+        public void StraightKeyDown(int note = 1, bool force = false) {
             // https://github.com/naudio/NAudio/blob/master/Docs/PlaySineWave.md
             // https://csharp.hotexamples.com/examples/NAudio.Wave/DirectSoundOut/Play/php-directsoundout-play-method-examples.html
 
-            if (Adsr == null) {
+            var previousLast = Down.LastOrDefault();
+            AddDownLever(Lever.StraightKey);
 
-                //https://stackoverflow.com/a/23357560/443019
+            if (previousLast == Lever.Dits) {
+                return; // wait until dit finished
 
-                var wave = Sine;
-                if (note == 2) wave = Sine2;
-                if (note == 3) wave = Sine3;
+            } else if (previousLast == Lever.StraightKey) {
+                // nothing to do 
+                if (!force) return;
+            }
 
-                if (Sine != null) {
-                    Adsr = new AdsrSampleProvider(wave.ToMono(1, 0)) {
-                        AttackSeconds = 0.015f,
-                        ReleaseSeconds = 0.015f
-                    };
-                }
+            //https://stackoverflow.com/a/23357560/443019
 
-                if (Mixer != null) {
-                    if (Mixer.WaveFormat.Channels == 2) {
-                        Mixer?.AddMixerInput(Adsr.ToStereo(1, 1));
-                    } else {
-                        Mixer?.AddMixerInput(Adsr);
-                    }
+            var wave = Sine;
+            if (note == 2) wave = Sine2;
+            if (note == 3) wave = Sine3;
 
+            if (StraightAdsr == null && Sine != null) {
+                //StraightAdsr?.Stop(); // maybe redundant to stop it to start it again
+                StraightAdsr = new AdsrSampleProvider(wave.ToMono(1, 0)) {
+                    AttackSeconds = 0.015f,
+                    ReleaseSeconds = 0.015f
+                };
+            }
+
+            if (Mixer != null) {
+                if (Mixer.WaveFormat.Channels == 2) {
+                    Mixer?.AddMixerInput(StraightAdsr.ToStereo(1, 1));
                 } else {
-                    MainWindow.Debug("Mixer null");
+                    Mixer?.AddMixerInput(StraightAdsr);
                 }
-                
+
+            } else {
+                MainWindow.DebugOut("Mixer null");
             }
 
             
         }
 
         public void StraightKeyUp() {
-            Adsr?.Stop();
-            Adsr = null;
+            RemoveDownLever(Lever.StraightKey);
+            StraightAdsr?.Stop();
+            StraightAdsr = null;
+        }
+
+        public void DitsKeyUp() {
+            RemoveDownLever(Lever.Dits);
         }
 
         protected virtual void Dispose(bool disposing) {
@@ -154,7 +229,7 @@ namespace UpSidetone.Sound
                 if (disposing) {
                     // TODO: dispose managed state (managed objects)
 
-                    Adsr?.Stop();
+                    StraightAdsr?.Stop();
                     //Mixer?.RemoveAllMixerInputs(); // probably not needed here
 
                 }
@@ -164,7 +239,7 @@ namespace UpSidetone.Sound
                 // TODO: set large fields to null
                 AudioOut = null;
                 //Mixer = null;
-                Adsr = null;
+                StraightAdsr = null;
                 Sine = null;
 
                 disposedValue = true;

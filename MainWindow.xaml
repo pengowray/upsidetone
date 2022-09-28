@@ -5,19 +5,12 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:UpSidetone"
         mc:Ignorable="d"
-        Title="UpSidetone by Pengo" Height="450" Width="800">
+        Title="UpSidetone by Pengo" Height="610" Width="800">
     <Grid PreviewKeyDown="Grid_PreviewKeyDown" PreviewKeyUp="Grid_PreviewKeyUp" LostFocus="Grid_LostFocus">
-        <Grid.RowDefinitions>
-            <RowDefinition Height="67*"/>
-            <RowDefinition Height="150*"/>
-        </Grid.RowDefinitions>
         <ComboBox Name="AudioOutputSelect" HorizontalAlignment="Left" Margin="25,45,0,0" VerticalAlignment="Top" Width="360" RenderTransformOrigin="-0.042,0.457" Height="32" SelectionChanged="AudioOutputSelect_SelectionChanged"/>
-        <ComboBox Name="MidiSelect" HorizontalAlignment="Left" Margin="25,93,0,0" VerticalAlignment="Top" Width="360" Height="32" SelectionChanged="MidiSelect_SelectionChanged" Grid.Row="1" />
-        <Button Content="Key" HorizontalAlignment="Left" Height="110" Margin="25,165,0,0" VerticalAlignment="Top" Width="360" Click="Button_Click" PreviewMouseLeftButtonDown="Button_MouseDown" PreviewMouseLeftButtonUp="Button_MouseUp" MouseDown="Button_MouseDown" MouseUp="Button_MouseUp" MouseLeave="Button_MouseLeave" Grid.Row="1" />
-        <TextBox Name="DebugText" HorizontalAlignment="Left" Height="399" Margin="400,10,0,0" TextWrapping="Wrap" Text="Debug log" VerticalAlignment="Top" Width="390" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto" Grid.RowSpan="2"/>
+        <Button Content="Key" HorizontalAlignment="Left" Height="110" Margin="25,464,0,0" VerticalAlignment="Top" Width="360" Click="Button_Click" PreviewMouseLeftButtonDown="Button_MouseDown" PreviewMouseLeftButtonUp="Button_MouseUp" MouseDown="Button_MouseDown" MouseUp="Button_MouseUp" MouseLeave="Button_MouseLeave" />
         <Label Content="Audio output device" HorizontalAlignment="Left" Height="30" Margin="25,10,0,0" VerticalAlignment="Top" Width="245"/>
-        <Label Content="Midi Input device" HorizontalAlignment="Left" Height="30" Margin="25,63,0,0" VerticalAlignment="Top" Width="245" Grid.Row="1"/>
-        <TextBox Name ="DeviceInfoText" Height="57" Margin="25,82,500,0" VerticalAlignment="Top" Grid.RowSpan="2">
+        <TextBox Name ="DeviceInfoText" Height="57" Margin="25,97,500,0" VerticalAlignment="Top">
             <TextBox.Style>
                 <Style TargetType="TextBox">
                     <Setter Property="IsReadOnly" Value="True" />
@@ -26,9 +19,35 @@
                 </Style>
             </TextBox.Style>
         </TextBox>
+        <Label Content="Midi Input device" HorizontalAlignment="Left" Height="30" Margin="25,164,0,0" VerticalAlignment="Top" Width="245"/>
+        <ComboBox Name="MidiSelect" HorizontalAlignment="Left" Margin="25,194,0,0" VerticalAlignment="Top" Width="360" Height="33" SelectionChanged="MidiSelect_SelectionChanged" />
+        <TextBox Name ="MidiPianoText" Height="30" Margin="25,232,415,0" VerticalAlignment="Top">
+            <TextBox.Style>
+                <Style TargetType="{x:Type TextBox}">
+                    <Setter Property="IsReadOnly" Value="True" />
+                    <Setter Property="BorderThickness" Value="0" />
+                    <Setter Property="TextWrapping" Value="Wrap" />
+                </Style>
+            </TextBox.Style>
+        </TextBox>
         <Button Name="AudioOutputOptionsButton" Content="Options" HorizontalAlignment="Left" Height="30" Margin="325,82,0,0" VerticalAlignment="Top" Width="60" Click="AudioOutOptions_Button_Click"/>
         <Button Name="AsioOutputOptionsButton" Content="ASIO" HorizontalAlignment="Left" Height="30" Margin="325,117,0,0" VerticalAlignment="Top" Width="60" Click="AsioOutputOptionsButton_Click" Grid.RowSpan="2"/>
-        <TextBox Name ="MidiPianoText" Height="30" Margin="25,130,415,0" VerticalAlignment="Top" Grid.Row="1">
+        <TextBox Name="DebugText" HorizontalAlignment="Left" Height="399" Margin="400,10,0,0" TextWrapping="Wrap" Text="Debug log" VerticalAlignment="Top" Width="390" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto" Grid.RowSpan="2"/>
+        <Label Content="Mouse button input" HorizontalAlignment="Left" Height="30" Margin="25,266,0,0" VerticalAlignment="Top" Width="245"/>
+        <ComboBox Name="MouseSelect" HorizontalAlignment="Left" Margin="25,296,0,0" VerticalAlignment="Top" Width="275" Height="33" />
+        <TextBox Name ="MousePianoText" Height="30" Margin="25,334,415,0" VerticalAlignment="Top">
+            <TextBox.Style>
+                <Style TargetType="{x:Type TextBox}">
+                    <Setter Property="IsReadOnly" Value="True" />
+                    <Setter Property="BorderThickness" Value="0" />
+                    <Setter Property="TextWrapping" Value="Wrap" />
+                </Style>
+            </TextBox.Style>
+        </TextBox>
+        <Button Name="MouseListRefresh" Content="Refresh" HorizontalAlignment="Left" Height="30" Margin="325,299,0,0" VerticalAlignment="Top" Width="60"/>
+        <Label Content="Keyer mode" HorizontalAlignment="Left" Height="30" Margin="25,356,0,0" VerticalAlignment="Top" Width="245"/>
+        <ComboBox Name="KeyerModeSelect" HorizontalAlignment="Left" Margin="25,386,0,0" VerticalAlignment="Top" Width="360" Height="33" />
+        <TextBox Name ="KeyerPianoText" Height="30" Margin="25,424,415,0" VerticalAlignment="Top">
             <TextBox.Style>
                 <Style TargetType="{x:Type TextBox}">
                     <Setter Property="IsReadOnly" Value="True" />

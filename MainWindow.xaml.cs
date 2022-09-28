@@ -15,8 +15,8 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
-using VirtualMorseKeyer.KeybIn;
-using VirtualMorseKeyer.MidiMorse;
+using UpSidetone.MidiMorse;
+using UpSidetone.MouseAndKeyboard;
 
 namespace UpSidetone {
     /// <summary>
@@ -24,13 +24,16 @@ namespace UpSidetone {
     /// </summary>
     public partial class MainWindow : Window, IDisposable {
 
-        int Latency = 90;
+        static public MainWindow Me { get; private set; } // Singleton (Lazy hack mostly for debugging)
+
+        int Latency = 60;
 
         AudioOut AudioOut;
         Sounder Sounder;
         MidiInput MidiInput;
         KeyboardInputWPF KeyboardInput;
-        static public MainWindow Me { get; private set; } // Singleton (Lazy hack)
+        MorseMouses MorseMouses;
+
         private bool disposedValue;
 
 
@@ -59,6 +62,14 @@ namespace UpSidetone {
 
             AudioOutputSelect.SelectedIndex = 0;
             MidiSelect.SelectedIndex = 0;
+
+            KeyerModeSelect.Items.Add("Straight key");
+            KeyerModeSelect.Items.Add("Bug");
+            KeyerModeSelect.SelectedIndex = 1;
+
+            MorseMouses = new MorseMouses();
+            MorseMouses.StartPolling();
+
         }
 
         private Sounder GetOrCreateSounder() {
@@ -87,14 +98,14 @@ namespace UpSidetone {
 
         private void MidiSelect_SelectionChanged(object sender, SelectionChangedEventArgs e) {
             var selected = MidiSelect.SelectedValue as string;
-            Debug(selected);
+            DebugOut(selected);
             var success = MidiInput.SelectDevice(selected);
-            Debug("success: " + success);
+            DebugOut("success: " + success);
         }
 
         void ReloadAudioDevice() {
             var selected = AudioOutputSelect.SelectedValue as string;
-            Debug("changing audio to: " + selected);
+            DebugOut("changing audio to: " + selected);
 
             AudioOut?.Dispose();
             Sounder?.Dispose();
@@ -121,17 +132,21 @@ namespace UpSidetone {
         private void Button_MouseDown(object sender, MouseButtonEventArgs e) {
             var sounder = GetOrCreateSounder();
             if (e.LeftButton == MouseButtonState.Pressed) {
+                //Sounder?.StraightKeyDown(1);
+                Sounder?.DitKeyDown();
+            } else {
                 Sounder?.StraightKeyDown(1);
-                //Sounder?.DitKeyDown();
-            } else if (e.MiddleButton == MouseButtonState.Pressed) {
-                Sounder?.StraightKeyDown(2);
-            } else if (e.RightButton == MouseButtonState.Pressed) {
-                Sounder?.StraightKeyDown(3);
             }
         }
 
         private void Button_MouseUp(object sender, MouseButtonEventArgs e) {
-            Sounder?.StraightKeyUp();
+            if (e.LeftButton == MouseButtonState.Released) {
+                Sounder?.DitsKeyUp();
+            } 
+
+            if (e.RightButton == MouseButtonState.Released) { 
+                Sounder?.StraightKeyUp();
+            }
         }
 
         private void Button_MouseLeave(object sender, MouseEventArgs e) {
@@ -141,12 +156,28 @@ namespace UpSidetone {
 
         public void Log(string text) {
             // make sure we're on our own thread
-            this.Dispatcher.Invoke(() => {
-                DebugText.Text = DebugText.Text + "\n" + text;
-            });
+            //this.Dispatcher.Invoke(() => {
+            //    if (piano != null) piano.Text = text;
+            //    DebugText.Text = DebugText.Text + "\n" + text;
+            //});
+
+            System.Diagnostics.Debug.WriteLine(text);
         }
 
-        public static void Debug(string text) {
+        public static void WriteLine(string text) {
+            // writes a line for mouse debugging
+            if (Me != null && Me.MousePianoText != null) {
+                //Me.Log("mouse: " + text, Me.MousePianoText);
+                Me.Dispatcher.Invoke(() => {
+                    if (Me != null && Me.MousePianoText != null) { // double check
+                        Me.MousePianoText.Text = text;
+                    }
+                });
+
+            }
+        }
+
+        public static void DebugOut(string text) {
             Me?.Log(text);
         }
 
@@ -161,6 +192,8 @@ namespace UpSidetone {
                     // dispose managed state (managed objects)
                     Sounder?.Dispose();
                     MidiInput?.Dispose();
+                    MorseMouses?.Dispose();
+
                 }
 
                 // free unmanaged resources (unmanaged objects) and override finalizer
@@ -232,6 +265,15 @@ namespace UpSidetone {
             this.Dispatcher.Invoke(() =>
             {
                 MidiPianoText.Text = MidiInput?.GetDownNotes() ?? "";
+            });
+        }
+
+        internal void SetMouseNames(IEnumerable<string> mice) {
+            this.Dispatcher.Invoke(() => {
+                foreach (var mouse in mice) {
+                    MouseSelect.Items.Add(mouse);
+                }
+                MouseSelect.SelectedIndex = 0;
             });
         }
     }

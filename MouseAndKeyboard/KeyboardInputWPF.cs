@@ -6,7 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Input;
 
-namespace VirtualMorseKeyer.KeybIn {
+namespace UpSidetone.MouseAndKeyboard {
     internal class KeyboardInputWPF {
 
         // keyboard handling for a Windows (WPF) app

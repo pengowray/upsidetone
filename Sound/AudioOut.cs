@@ -31,7 +31,7 @@ namespace UpSidetone.Sound
         const string DEFAULT_AUDIO = "(default)";
         const string NONE_LABEL = "(none)";
         const string PRE_WAVE = "WAVE: "; // =WDM?
-        const string PRE_DS = "DS: "; // =KS?
+        const string PRE_DS = "DS: "; // =KS? Kernel Streaming
         const string PRE_WASAPI = "WASAPI: "; // =MME?
         const string PRE_ASIO = "ASIO: ";
 
@@ -138,11 +138,11 @@ namespace UpSidetone.Sound
                         ReportLatency = 40;
                         OutDevice = new DirectSoundOut();
                     }
-                    MainWindow.Debug($"{DEFAULT_AUDIO} Found.");
+                    MainWindow.DebugOut($"{DEFAULT_AUDIO} Found.");
                     return;
 
                 } catch (Exception e) {
-                    MainWindow.Debug("Failed to set audio to default");
+                    MainWindow.DebugOut("Failed to set audio to default");
                     return;
                 }
 
@@ -171,7 +171,7 @@ namespace UpSidetone.Sound
                             ReportLatency = 300;
                         }
                         OutDevice = outDev;
-                        MainWindow.Debug($"{PRE_WAVE}Found: {name}");
+                        MainWindow.DebugOut($"{PRE_WAVE}Found: {name}");
                         return;
                     }
                 }
@@ -180,7 +180,7 @@ namespace UpSidetone.Sound
                 string name = deviceName.Substring(PRE_DS.Length);
                 var parts = name.Split(" | ");
                 if (parts == null || parts.Length <= 0) {
-                    MainWindow.Debug($"{PRE_DS}Not found (name or guid missing)");
+                    MainWindow.DebugOut($"{PRE_DS}Not found (name or guid missing)");
                     ReportLatency = 0;
                     return;
                 }
@@ -227,7 +227,7 @@ namespace UpSidetone.Sound
 
                 var parts = name.Split(" | ");
                 if (parts == null || parts.Length <= 0) {
-                    MainWindow.Debug($"{PRE_WASAPI}Not found (name missing)");
+                    MainWindow.DebugOut($"{PRE_WASAPI}Not found (name missing)");
                     return;
                 }
                 //FriendlyName} | {wasapi.DeviceFriendlyName
@@ -251,7 +251,7 @@ namespace UpSidetone.Sound
                     return;
                 }
 
-                MainWindow.Debug($"{PRE_WASAPI}Not found: {name}");
+                MainWindow.DebugOut($"{PRE_WASAPI}Not found: {name}");
                 return;
 
             } else if (deviceName.StartsWith(PRE_ASIO)) {
@@ -263,17 +263,17 @@ namespace UpSidetone.Sound
                         var asioOut = new AsioOut(name);
                         ReportLatency = 0; // reported separately for ASIO
                         OutDevice = asioOut;
-                        MainWindow.Debug($"{PRE_ASIO} found: {name}");
+                        MainWindow.DebugOut($"{PRE_ASIO} found: {name}");
                         //MainWindow.Debug($"asio set ({name}; device:{OutDevice}; format:{OutDevice?.OutputWaveFormat?.ToString() ?? "null"}): " + OutDevice?.ToString());
                         return;
                     } catch (Exception e) {
-                        MainWindow.Debug($"{PRE_ASIO} error ({e?.GetType()}): {e?.Message}");
+                        MainWindow.DebugOut($"{PRE_ASIO} error ({e?.GetType()}): {e?.Message}");
                     }
                 }
             }
 
             ReportLatency = 0;
-            MainWindow.Debug($"Error. Unrecognized: {deviceName}");
+            MainWindow.DebugOut($"Error. Unrecognized: {deviceName}");
 
         }
         private void InitDeviceAndMixer() {
@@ -313,7 +313,7 @@ namespace UpSidetone.Sound
                     Mixer.ReadFully = true;
                     OutDevice?.Init(Mixer);
                     OutDevice?.Play();
-                    MainWindow.Debug($"Format found ({freq}Hz): {Format?.ToString()}");
+                    MainWindow.DebugOut($"Format found ({freq}Hz): {Format?.ToString()}");
                     return;
 
                 } catch (Exception e) {
@@ -332,7 +332,7 @@ namespace UpSidetone.Sound
                         // (NAudio.Wave.Asio.AsioException): "Error code [ASE_NotPresent] while calling ASIO method <setSampleRate>, "
 
                         string err1 = $"driverCreateException ({e?.GetType()}): " + e?.Message?.ToString();
-                        MainWindow.Debug(err1);
+                        MainWindow.DebugOut(err1);
                         return;
                     }
 
@@ -366,7 +366,7 @@ namespace UpSidetone.Sound
 
                     string err = $"driverCreateException ({e?.GetType()}): " + e?.Message?.ToString();
                     //Console.WriteLine(err);
-                    MainWindow.Debug(err);
+                    MainWindow.DebugOut(err);
                 }
 
                 // No info in OutDevice until it's Init'd
@@ -407,7 +407,7 @@ namespace UpSidetone.Sound
                 // DUO-CAPTURE EX
                 // Focusrite USB ASIO
                 // Realtek ASIO
-                MainWindow.Debug(asio);
+                MainWindow.DebugOut(asio);
                 yield return $"{PRE_ASIO}{asio}";
             }
 
@@ -423,12 +423,12 @@ namespace UpSidetone.Sound
 
             var objCollection = objSearcher.Get();
             foreach (var d in objCollection) {
-                MainWindow.Debug($"=====DEVICE {d}====");
+                MainWindow.DebugOut($"=====DEVICE {d}====");
                 foreach (var p in d.Properties) {
-                    MainWindow.Debug($"{p.Name}:{p.Value}");
+                    MainWindow.DebugOut($"{p.Name}:{p.Value}");
                 }
             }
-            MainWindow.Debug("=========");
+            MainWindow.DebugOut("=========");
 
         }
 
@@ -487,7 +487,7 @@ namespace UpSidetone.Sound
                     asioOut.ShowControlPanel();
                     return true;
                 } catch (Exception e) {
-                    MainWindow.Debug($"Error launching ASIO control panel ({e.GetType()}): '{e.Message}'");
+                    MainWindow.DebugOut($"Error launching ASIO control panel ({e.GetType()}): '{e.Message}'");
                     //NAudio.Wave.Asio.AsioException: 'Error code [ASE_NotPresent] while calling ASIO method <controlPanel>, '
                     return false;
                 }

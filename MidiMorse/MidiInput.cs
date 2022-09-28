@@ -9,7 +9,7 @@ using UpSidetone;
 using UpSidetone.Sound;
 using NAudio.Midi;
 
-namespace VirtualMorseKeyer.MidiMorse {
+namespace UpSidetone.MidiMorse {
 
     public class MidiInput : IDisposable {
 
@@ -22,7 +22,7 @@ namespace VirtualMorseKeyer.MidiMorse {
 
         const string NONE_LABEL = "(none)";
 
-        public void Enable(Sounder sounder = null) {
+        public void Enable(Sounder? sounder = null) {
             //Sounder = sounder ?? new Sounder();
             Sounder = sounder;
             //Sounder.Enable();
@@ -79,7 +79,7 @@ namespace VirtualMorseKeyer.MidiMorse {
             Midi.MessageReceived += MidiIn_MessageReceived;
             Midi.ErrorReceived += MidiIn_ErrorReceived; ;
             Midi.Start();
-            MainWindow.Debug($"Midi started " + selectedDeviceIndex);
+            MainWindow.DebugOut($"Midi started " + selectedDeviceIndex);
             return true;
         }
 

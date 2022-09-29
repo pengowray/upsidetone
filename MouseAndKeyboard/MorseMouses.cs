@@ -1,11 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Drawing.Text;
 using System.Linq;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading.Tasks;
 
 using ManyMouseSharp;
+using UpSidetone.Sound;
 using static System.Windows.Forms.VisualStyles.VisualStyleElement.TrackBar;
 using static ManyMouseSharp.ManyMouse;
 //using static System.Console;
@@ -15,9 +17,26 @@ using static UpSidetone.MainWindow;
 
 namespace UpSidetone.MouseAndKeyboard {
     public class MorseMouses : IDisposable {
+        const int NON_DEVICE_LABELS = 2; // "none" and "all"
+        const string NONE_LABEL = "(none)"; // todo: rename to "(none watched)" or none in background or something
+        const int NONE_VALUE = 0;
+        const string ALL_LABEL = "(all devices)";
+        const int ALL_VALUE = 1;
+
         Task? polling;
         bool stopPolling = false;
         private bool disposedValue;
+        public Sounder? Sounder;
+
+        List<string>? Mouses = null; // created on DoInit()
+
+        public int ChosenMouse = NONE_VALUE;
+        public bool ListenToAll = false; // override chosen and use all (e.g. while mousing over test area)
+
+        public void SetSounder(Sounder sounder) {
+            //Note: doesn't manage Sounder and doesn't dispose of it
+            Sounder = sounder;
+        }
 
         public void StartPolling() {
             if (polling != null && !polling.IsCompleted) {
@@ -41,28 +60,58 @@ namespace UpSidetone.MouseAndKeyboard {
             //polling = null;
         }
 
+        private void CalcNames() {
+            int mice = AmountOfMiceDetected;
+            WriteLine($"{mice} mice on {DriverName}");
+            Mouses = new();
+            Mouses.Add(NONE_LABEL);
+            Mouses.Add(ALL_LABEL);
+            for (uint i = 0; i < mice; i++) {
+                //TODO: only include a number if there's more than one with the same name
+                string name = $"({i}) {DeviceName(i)}"; 
+                Mouses.Add(name);
+                WriteLine(name);
+            }
+            var index = ChosenMouse + NON_DEVICE_LABELS;
+            MainWindow.Me.SetMouseNames(Mouses.AsEnumerable());
+        }
+
         void EndlessPolling() {
             //Console.CancelKeyPress += OnCancelKeyPress;
             string finalMessage;
             try {
-                WriteLine("Starting up ManyMouse");
-                int result = Init();
-                WriteLine($"{AmountOfMiceDetected} mice on {DriverName}");
-                List<string> mouses = new();
-                mouses.Add("(none)"); // todo: rename to "(none watched)" or something
-                for (uint i = 0; i < result; i++) {
-                    string name = DeviceName(i);
-                    mouses.Add(name);
-                    WriteLine($"\tname");
-                }
-                MainWindow.Me.SetMouseNames(mouses.AsEnumerable());
 
-                WriteLine("Starting to poll.");
+                WriteLine("Starting up ManyMouse");
+                int result = Init(); // result = AmountOfMiceDetected
+                CalcNames();
+                WriteLine($"Starting to poll.");
+
                 while (!stopPolling) {
                     while (PollEvent(out ManyMouseEvent mme) > 0) {
                         if (mme.type == ManyMouseEventType.MANYMOUSE_EVENT_BUTTON) {
                             //WriteLine(mme.ToString());
-                            WriteLine($"[{mme.device + 1}] {DeviceName(mme.device)}: {mme.item}: {(mme.value == 1 ? "Down" : "Up")}");
+                            if (ListenToAll || ChosenMouse == ALL_VALUE || ChosenMouse == mme.device + NON_DEVICE_LABELS ) {
+                                if (mme.item == 0) {
+                                    if (mme.value == 1) {
+                                        Sounder?.DitKeyDown();
+                                    } else {
+                                        Sounder?.DitsKeyUp();
+                                    }
+                                } else {
+                                    if (mme.value == 1) {
+                                        Sounder?.StraightKeyDown();
+                                    } else {
+                                        Sounder?.StraightKeyUp();
+                                    }
+                                }
+                                WriteLine($"({mme.device}) {DeviceName(mme.device)} Button {mme.item}: {(mme.value == 1 ? "Down" : "Up")}");
+                                //TODO: paste the text and flag another thread get around to sending it to the UI
+                                //Task message = Task.Run(() => 
+                                //    Piano = $"({mme.device}) {DeviceName(mme.device)} Button {mme.item}: {(mme.value == 1 ? "Down" : "Up")}";
+                                //);
+
+                            }
+
                         }
                     }
                 }
@@ -90,6 +139,8 @@ namespace UpSidetone.MouseAndKeyboard {
                 if (disposing) {
                     // dispose managed state (managed objects)
                     try {
+                        ListenToAll = false;
+                        ChosenMouse = NONE_VALUE;
                         Quit();
                     } catch {}
                     //TODO: interrupt Task?

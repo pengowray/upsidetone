@@ -8,9 +8,9 @@
         Title="UpSidetone by Pengo" Height="610" Width="800">
     <Grid PreviewKeyDown="Grid_PreviewKeyDown" PreviewKeyUp="Grid_PreviewKeyUp" LostFocus="Grid_LostFocus">
         <ComboBox Name="AudioOutputSelect" HorizontalAlignment="Left" Margin="25,45,0,0" VerticalAlignment="Top" Width="360" RenderTransformOrigin="-0.042,0.457" Height="32" SelectionChanged="AudioOutputSelect_SelectionChanged"/>
-        <Button Content="Key" HorizontalAlignment="Left" Height="110" Margin="25,464,0,0" VerticalAlignment="Top" Width="360" Click="Button_Click" PreviewMouseLeftButtonDown="Button_MouseDown" PreviewMouseLeftButtonUp="Button_MouseUp" MouseDown="Button_MouseDown" MouseUp="Button_MouseUp" MouseLeave="Button_MouseLeave" />
+        <Button Content="Key" HorizontalAlignment="Left" Height="110" Margin="25,464,0,0" VerticalAlignment="Top" Width="360" Click="Button_Click" PreviewMouseLeftButtonDown="Button_MouseDown" PreviewMouseLeftButtonUp="Button_MouseUp" MouseDown="Button_MouseDown" MouseUp="Button_MouseUp" MouseLeave="Button_MouseLeave" MouseEnter="Button_MouseEnter"/>
         <Label Content="Audio output device" HorizontalAlignment="Left" Height="30" Margin="25,10,0,0" VerticalAlignment="Top" Width="245"/>
-        <TextBox Name ="DeviceInfoText" Height="57" Margin="25,97,500,0" VerticalAlignment="Top">
+        <TextBox Name ="DeviceInfoText" Height="72" Margin="25,82,500,0" VerticalAlignment="Top">
             <TextBox.Style>
                 <Style TargetType="TextBox">
                     <Setter Property="IsReadOnly" Value="True" />
@@ -19,7 +19,7 @@
                 </Style>
             </TextBox.Style>
         </TextBox>
-        <Label Content="Midi Input device" HorizontalAlignment="Left" Height="30" Margin="25,164,0,0" VerticalAlignment="Top" Width="245"/>
+        <Label Content="Midi background sounds:" HorizontalAlignment="Left" Height="30" Margin="25,164,0,0" VerticalAlignment="Top" Width="245"/>
         <ComboBox Name="MidiSelect" HorizontalAlignment="Left" Margin="25,194,0,0" VerticalAlignment="Top" Width="360" Height="33" SelectionChanged="MidiSelect_SelectionChanged" />
         <TextBox Name ="MidiPianoText" Height="30" Margin="25,232,415,0" VerticalAlignment="Top">
             <TextBox.Style>
@@ -33,8 +33,8 @@
         <Button Name="AudioOutputOptionsButton" Content="Options" HorizontalAlignment="Left" Height="30" Margin="325,82,0,0" VerticalAlignment="Top" Width="60" Click="AudioOutOptions_Button_Click"/>
         <Button Name="AsioOutputOptionsButton" Content="ASIO" HorizontalAlignment="Left" Height="30" Margin="325,117,0,0" VerticalAlignment="Top" Width="60" Click="AsioOutputOptionsButton_Click" Grid.RowSpan="2"/>
         <TextBox Name="DebugText" HorizontalAlignment="Left" Height="399" Margin="400,10,0,0" TextWrapping="Wrap" Text="Debug log" VerticalAlignment="Top" Width="390" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto" Grid.RowSpan="2"/>
-        <Label Content="Mouse button input" HorizontalAlignment="Left" Height="30" Margin="25,266,0,0" VerticalAlignment="Top" Width="245"/>
-        <ComboBox Name="MouseSelect" HorizontalAlignment="Left" Margin="25,296,0,0" VerticalAlignment="Top" Width="275" Height="33" />
+        <Label Content="Mouse button background sounds:" HorizontalAlignment="Left" Height="30" Margin="25,266,0,0" VerticalAlignment="Top" Width="245"/>
+        <ComboBox Name="MouseSelect" HorizontalAlignment="Left" Margin="25,296,0,0" VerticalAlignment="Top" Width="275" Height="33" SelectionChanged="MouseSelect_SelectionChanged" />
         <TextBox Name ="MousePianoText" Height="30" Margin="25,334,415,0" VerticalAlignment="Top">
             <TextBox.Style>
                 <Style TargetType="{x:Type TextBox}">

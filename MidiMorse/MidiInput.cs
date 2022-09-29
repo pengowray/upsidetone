@@ -20,7 +20,10 @@ namespace UpSidetone.MidiMorse {
         private bool disposedValue;
         Dictionary<int, string> DownNotes = new(); // notenumber -> description
 
+        const int NON_DEVICE_LABELS = 1; // "none" and "all"
         const string NONE_LABEL = "(none)";
+        const string ALL_LABEL = "(any)"; //TODO
+
 
         public void Enable(Sounder? sounder = null) {
             //Sounder = sounder ?? new Sounder();
@@ -30,7 +33,8 @@ namespace UpSidetone.MidiMorse {
 
         public IEnumerable<string> DeviceNames() {
 
-            yield return NONE_LABEL; // "(none")
+            yield return NONE_LABEL; // "(none)"
+            //yield return ALL_LABEL; // "(any)" // TODO
 
             for (int device = 0; device < MidiIn.NumberOfDevices; device++) {
                 yield return MidiIn.DeviceInfo(device).ProductName;
@@ -50,11 +54,16 @@ namespace UpSidetone.MidiMorse {
                 return false;
             }
 
+            if (selectedDevice == ALL_LABEL) {
+                SelectDevice(-2); // TODO
+                return false;
+            }
+
             //int? index = DeviceNames()..Select((n,i) => new Tuple(n, i)).Where((n, i) => n == selectedDevice).Select((n, i) => i).FirstOrDefault();
             var devices = DeviceNames().ToArray();
             for (int i = 0; i < devices.Length; i++) {
                 if (devices[i] == selectedDevice) {
-                    return SelectDevice(i - 1);
+                    return SelectDevice(i - NON_DEVICE_LABELS);
                 }
             }
 
@@ -72,7 +81,7 @@ namespace UpSidetone.MidiMorse {
                 Midi.Close();
             }
 
-            if (selectedDeviceIndex < 0)
+            if (selectedDeviceIndex == -1) // NONE_LABEL ("none")
                 return false;
 
             Midi = new MidiIn(selectedDeviceIndex);

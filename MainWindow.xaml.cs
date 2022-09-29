@@ -17,6 +17,7 @@ using System.Windows.Navigation;
 using System.Windows.Shapes;
 using UpSidetone.MidiMorse;
 using UpSidetone.MouseAndKeyboard;
+using System.Runtime.Intrinsics.Arm;
 
 namespace UpSidetone {
     /// <summary>
@@ -26,7 +27,7 @@ namespace UpSidetone {
 
         static public MainWindow Me { get; private set; } // Singleton (Lazy hack mostly for debugging)
 
-        int Latency = 60;
+        int Latency = 90;
 
         AudioOut AudioOut;
         Sounder Sounder;
@@ -35,8 +36,6 @@ namespace UpSidetone {
         MorseMouses MorseMouses;
 
         private bool disposedValue;
-
-
 
         public MainWindow() {
             Me = this;
@@ -48,6 +47,10 @@ namespace UpSidetone {
             MidiInput.Enable(Sounder); // sounder will be null but that's ok
 
             KeyboardInput = new KeyboardInputWPF(); //todo: Enable()
+
+            MorseMouses = new MorseMouses();
+            MorseMouses.Sounder = Sounder;
+            MorseMouses.StartPolling();
 
             //GetOrCreateSounder(); // create default?
 
@@ -67,8 +70,6 @@ namespace UpSidetone {
             KeyerModeSelect.Items.Add("Bug");
             KeyerModeSelect.SelectedIndex = 1;
 
-            MorseMouses = new MorseMouses();
-            MorseMouses.StartPolling();
 
         }
 
@@ -83,8 +84,13 @@ namespace UpSidetone {
 
                 MidiInput?.SetSounder(Sounder);
                 KeyboardInput?.SetSounder(Sounder);
+                MorseMouses?.SetSounder(Sounder);
 
                 DeviceInfoText.Text = AudioOut?.GetReport() ?? "";
+                ////(commented out): Offer help? This is too much to squeeze in here
+                //if (AudioOut == null || AudioOut.OutDevice == null) {
+                //    DeviceInfoText.Text = "WDM (aka WASAPI) offers low latency. MME has the strongest compatibility. Some audio devices have very low latency ASIO drivers.";
+                //}
 
                 if (AudioOut?.IsAsio() ?? false) {
                     AsioOutputOptionsButton.IsEnabled = true;
@@ -151,7 +157,12 @@ namespace UpSidetone {
 
         private void Button_MouseLeave(object sender, MouseEventArgs e) {
             // stop it getting stuck
-            Sounder?.StraightKeyUp();
+            //Sounder?.StraightKeyUp();
+            if (MorseMouses != null) MorseMouses.ListenToAll = false;
+        }
+
+        private void Button_MouseEnter(object sender, MouseEventArgs e) {
+            if (MorseMouses != null) MorseMouses.ListenToAll = true;
         }
 
         public void Log(string text) {
@@ -182,6 +193,7 @@ namespace UpSidetone {
         }
 
         private void MainWindow_Closed(object? sender, EventArgs e) {
+            if (MorseMouses != null) MorseMouses.ListenToAll = true;
             Dispose();
         }
 
@@ -268,13 +280,20 @@ namespace UpSidetone {
             });
         }
 
-        internal void SetMouseNames(IEnumerable<string> mice) {
+        internal void SetMouseNames(IEnumerable<string> mice, int selectedIndex = 0) {
             this.Dispatcher.Invoke(() => {
                 foreach (var mouse in mice) {
                     MouseSelect.Items.Add(mouse);
                 }
-                MouseSelect.SelectedIndex = 0;
+                MouseSelect.SelectedIndex = selectedIndex;
             });
         }
+
+        private void MouseSelect_SelectionChanged(object sender, SelectionChangedEventArgs e) {
+            if (MorseMouses != null) {
+                MorseMouses.ChosenMouse = MouseSelect.SelectedIndex;
+            }
+        }
+
     }
 }

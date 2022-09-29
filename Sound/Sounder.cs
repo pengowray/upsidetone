@@ -128,6 +128,9 @@ namespace UpSidetone.Sound
                     //TODO: add silence before dit if straight key was going?
                 }
 
+                if (Sine == null) {
+                    return; // maybe shutting down
+                }
                 //todo: dont allow negative time
                 var wave = Sine.Take(TimeSpan.FromSeconds(ditSeconds));
                 var faded = new FadeOutSampleProvider(wave);

@@ -1,18 +1,18 @@
-﻿using NAudio.Wave.SampleProviders;
-using NAudio.Wave;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using NAudio.Mixer;
-using NAudio.CoreAudioApi;
-using System.Windows.Forms;
 using System.Management;
 using System.Runtime;
 using System.Diagnostics;
 using System.Xml.Linq;
+
+using NAudio.Mixer;
+using NAudio.CoreAudioApi;
+using NAudio.Wave.SampleProviders;
+using NAudio.Wave;
 //using NWaves.Audio;
 
 namespace UpSidetone.Sound
@@ -30,9 +30,18 @@ namespace UpSidetone.Sound
 
         const string DEFAULT_AUDIO = "(default)";
         const string NONE_LABEL = "(none)";
-        const string PRE_WAVE = "WAVE: "; // =WDM?
-        const string PRE_DS = "DS: "; // =KS? Kernel Streaming
-        const string PRE_WASAPI = "WASAPI: "; // =MME?
+
+        // MME (Multimedia Events, aka WinMM [Windows Multimedia APIs])
+        // MME was released in 1991.
+        // "the most compatible with all audio devices"
+        // winmm.dll is used by NAudio = MME
+        // We previously called this "WAVE". Renamed MME to match VoiceMeeter. (Also more descriptive)
+        const string PRE_WAVE = "MME: ";
+
+        // "DirectSound is basically just a DirectX-related Interface to the Windows Audio Session API (WASAPI) underneath."
+        const string PRE_DS = "DS: "; // 
+
+        const string PRE_WASAPI = "WDM: "; // WASAPI is called WDM in VoiceMeeter; related to KS (Kernel Streaming)
         const string PRE_ASIO = "ASIO: ";
 
         private int DesiredLatency = 90;
@@ -81,22 +90,24 @@ namespace UpSidetone.Sound
             }
 
             if (OutDevice is DirectSoundOut directSoundOut) {
+                // Official name is now "DirectX Audio" but that seems rare.
                 if (ReportLatency <= 0) return "";
-                return $"Latency: {ReportLatency}ms" + ApproxSamples();
+                return $"DirectSound latency: {ReportLatency}ms" + ApproxSamples();
             }
             if (OutDevice is WasapiOut wasapiOut) {
                 if (ReportLatency <= 0) return "";
-                return $"Latency: {ReportLatency}ms" + ApproxSamples();
+                // deliberately call it WASAPI instead of WDM here so user can work out what it really is
+                return $"WASAPI latency: {ReportLatency}ms" + ApproxSamples();
             }
             if (OutDevice is WaveOut waveOut) {
                 if (ReportLatency <= 0) return "";
-                return $"WaveOut Latency: {waveOut.DesiredLatency}ms{ApproxSamples()}; Buffers: {waveOut.NumberOfBuffers}";
+                return $"MME latency: {waveOut.DesiredLatency}ms{ApproxSamples()}; Buffers: {waveOut.NumberOfBuffers}";
             }
             if (OutDevice is AsioOut asioOut) {
                 int sampleRate = asioOut?.OutputWaveFormat?.SampleRate ?? 0;
                 if (sampleRate <= 0) return "";
                 float latencySeconds = 1.0f * asioOut.PlaybackLatency / sampleRate;
-                return $"ASIO Latency: {asioOut.PlaybackLatency} samples [{latencySeconds*1000.0f:N2}ms]";
+                return $"ASIO latency: {asioOut.PlaybackLatency} samples [{latencySeconds*1000.0f:N2}ms]";
             }
 
             return "";
@@ -221,9 +232,10 @@ namespace UpSidetone.Sound
                     }
                 }
 
-            } else if (deviceName.StartsWith(PRE_WASAPI)) {
-                string name = deviceName.Substring(PRE_WASAPI.Length);
-                //MainWindow.Debug($"{PRE_WASAPI} not yet implemented NYI: {name}");
+            } else if (deviceName.StartsWith(PRE_WASAPI) || deviceName.StartsWith("WASAPI: ")) {
+                // Allow "WDM: " (voicemeeter style) or "WASAPI: " (technically more correct)
+                //string name = deviceName.Substring(PRE_WASAPI.Length);
+                string name = deviceName.Substring(deviceName.IndexOf(':') + 2); // +2 to get past ": ".
 
                 var parts = name.Split(" | ");
                 if (parts == null || parts.Length <= 0) {
@@ -382,11 +394,12 @@ namespace UpSidetone.Sound
             yield return DEFAULT_AUDIO;
             yield return NONE_LABEL;
 
-            for (int n = -1; n < WaveOut.DeviceCount; n++) {
-                var caps = WaveOut.GetCapabilities(n);
-                //Console.WriteLine($"{n}: {caps.ProductName}");
-                yield return $"{PRE_WAVE}{caps.ProductName}";
+            var enumerator = new MMDeviceEnumerator();
+            foreach (var wasapi in enumerator.EnumerateAudioEndPoints(DataFlow.Render, DeviceState.Active)) {
+                //TODO: maybe use ID, or cut out GUID part from it
+                yield return $"{PRE_WASAPI}{wasapi.FriendlyName} | {wasapi.DeviceFriendlyName}";
             }
+
 
             foreach (var dev in DirectSoundOut.Devices) {
                 // Example:
@@ -396,10 +409,10 @@ namespace UpSidetone.Sound
                 yield return $"{PRE_DS}{dev.Description} | {dev.Guid}";
             }
 
-            var enumerator = new MMDeviceEnumerator();
-            foreach (var wasapi in enumerator.EnumerateAudioEndPoints(DataFlow.Render, DeviceState.Active)) {
-                //TODO: maybe use ID, or cut out GUID part from it
-                yield return $"{PRE_WASAPI}{wasapi.FriendlyName} | {wasapi.DeviceFriendlyName}";
+            for (int n = -1; n < WaveOut.DeviceCount; n++) {
+                var caps = WaveOut.GetCapabilities(n);
+                //Console.WriteLine($"{n}: {caps.ProductName}");
+                yield return $"{PRE_WAVE}{caps.ProductName}";
             }
 
             foreach (var asio in AsioOut.GetDriverNames()) {

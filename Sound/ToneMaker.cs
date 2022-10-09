@@ -25,9 +25,9 @@ namespace upSidetone.Sound
         //BestGuess // 
     }
 
-    // replaced with Sounder2
+    // replaced with ToneMaker2
 
-    public class Sounder_Old : IDisposable {
+    public class ToneMaker_Old : IDisposable {
 
         List<LeverKind> Down = new(); // keys pressed and in what order
 
@@ -53,7 +53,7 @@ namespace upSidetone.Sound
 
         private bool disposedValue;
 
-        public Sounder_Old(AudioOut audioOut) {
+        public ToneMaker_Old(AudioOut audioOut) {
             AudioOut = audioOut;
         }
 

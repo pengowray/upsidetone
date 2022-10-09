@@ -30,7 +30,7 @@ namespace upSidetone {
         int Latency = 90;
 
         AudioOut AudioOut;
-        Sounder Sounder;
+        ToneMaker Sounder;
         MidiInput MidiInput;
         KeyboardInputWPF KeyboardInput;
         MorseMouses MorseMouses;
@@ -73,13 +73,13 @@ namespace upSidetone {
 
         }
 
-        private Sounder GetOrCreateSounder() {
+        private ToneMaker GetOrCreateSounder() {
             if (Sounder == null) {
                 string? selected = AudioOutputSelect.SelectedValue as string; // ok if null
 
                 AudioOut = new AudioOut();
                 AudioOut.Enable(selected, Latency);
-                Sounder = new Sounder(AudioOut);
+                Sounder = new ToneMaker(AudioOut);
                 Sounder.Enable();
 
                 MidiInput?.SetSounder(Sounder);

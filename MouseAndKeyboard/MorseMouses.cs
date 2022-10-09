@@ -26,14 +26,14 @@ namespace upSidetone.MouseAndKeyboard {
         Task? polling;
         bool stopPolling = false;
         private bool disposedValue;
-        public Sounder? Sounder;
+        public ToneMaker? Sounder;
 
         List<string>? Mouses = null; // created on DoInit()
 
         public int ChosenMouse = NONE_VALUE;
         public bool ListenToAll = false; // override chosen and use all (e.g. while mousing over test area)
 
-        public void SetSounder(Sounder sounder) {
+        public void SetSounder(ToneMaker sounder) {
             //Note: doesn't manage Sounder and doesn't dispose of it
             Sounder = sounder;
         }

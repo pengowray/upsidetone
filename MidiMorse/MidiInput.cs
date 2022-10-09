@@ -15,7 +15,7 @@ namespace upSidetone.MidiMorse {
 
         // https://github.com/naudio/NAudio/blob/master/Docs/MidiInAndOut.md
 
-        Sounder? Sounder;
+        ToneMaker? Sounder;
         MidiIn? Midi;
         private bool disposedValue;
         Dictionary<int, string> DownNotes = new(); // notenumber -> description
@@ -25,7 +25,7 @@ namespace upSidetone.MidiMorse {
         const string ALL_LABEL = "(any)"; //TODO
 
 
-        public void Enable(Sounder? sounder = null) {
+        public void Enable(ToneMaker? sounder = null) {
             //Sounder = sounder ?? new Sounder();
             Sounder = sounder;
             //Sounder.Enable();
@@ -41,7 +41,7 @@ namespace upSidetone.MidiMorse {
             }
         }
 
-        public void SetSounder(Sounder sounder) {
+        public void SetSounder(ToneMaker sounder) {
             //Note: MidiInput doesn't manage Sounder and doesn't dispose of it
             Sounder = sounder;
         }

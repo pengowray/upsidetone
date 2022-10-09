@@ -13,8 +13,9 @@ using NAudio.Wave;
 
 namespace upSidetone.Sound {
 
-    //rewrite of Sounder
-    public class Sounder : IDisposable {
+    //rewrite of ToneMaker_Old (previously called "Sounder")
+
+    public class ToneMaker : IDisposable {
 
         //TODO: per lever
         const double wpm = 12.0;
@@ -31,7 +32,7 @@ namespace upSidetone.Sound {
 
         public WaveFormat Format => AudioOut?.Format;
 
-        public Sounder(AudioOut audioOut) {
+        public ToneMaker(AudioOut audioOut) {
             AudioOut = audioOut;
             //ScoreProvider = new ScoreProvider(audioOut.Format);
             ScoreProvider = new MixingSampleProvider(audioOut.Format);

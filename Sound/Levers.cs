@@ -23,13 +23,13 @@ namespace upSidetone.Sound {
         //bool PauseBefore;
         //bool PauseAfter;
 
-        Sounder Sounder;
+        ToneMaker Sounder;
 
 
         LeverKind Kind;
         long Samples = 0; // how many samples in are we
         
-        public Levers(Sounder sounder, LeverKind kind = LeverKind.Straight) {
+        public Levers(ToneMaker sounder, LeverKind kind = LeverKind.Straight) {
             Sounder = sounder;
             
             

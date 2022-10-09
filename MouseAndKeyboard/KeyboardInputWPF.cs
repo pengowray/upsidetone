@@ -11,12 +11,12 @@ namespace upSidetone.MouseAndKeyboard {
 
         // keyboard handling for a Windows (WPF) app
 
-        Sounder Sounder;
+        ToneMaker Sounder;
 
         public KeyboardInputWPF() {
         }
 
-        public void SetSounder(Sounder sounder) {
+        public void SetSounder(ToneMaker sounder) {
             //Note: MidiInput doesn't manage Sounder and doesn't dispose of it
             Sounder = sounder;
         }

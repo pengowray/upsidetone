@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.3.32901.215
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "UpSidetone", "UpSidetone.csproj", "{3D1B2CFC-295D-49BC-967A-4B3D89F3133B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "upSidetone", "upSidetone.csproj", "{3D1B2CFC-295D-49BC-967A-4B3D89F3133B}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

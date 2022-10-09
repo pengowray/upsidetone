@@ -4,11 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace upSidetone.Mouse {
-
-    internal class MouseKeyer {
-
-
-
+namespace upSidetone.Sound {
+    internal class SampleCounter {
     }
 }

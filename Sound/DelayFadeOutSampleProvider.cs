@@ -7,13 +7,12 @@
 // [errors] https://gist.github.com/markheath/8fb396a5fe4bf117f361
 // [fixed? nope] https://gist.github.com/Ahmed-Abdelhameed/b867a8cfe739cd7a128b73a33d317402
 // via: https://www.markheath.net/post/naudio-delay-fade-out
-
-// rewritten
+// rewritten (this): https://gist.github.com/pengowray/621ec0566199a0a22d51a51e1be77784
 
 using System;
 using NAudio.Wave;
 
-namespace UpSidetone.Sound;
+namespace upSidetone.Sound;
 
 /// <summary>
 /// Sample Provider to allow fading in and out
@@ -53,23 +52,39 @@ public class FadeOutSampleProvider : ISampleProvider {
         }
     }
 
-    public void SetFadeIn(double fadeDurationInMilliseconds) {
+    public void SetFadeInSeconds(double fadeDurationInSeconds) {
         lock (lockObject) {
             fadeInStart = 0;
-            fadeInSamples = (int)((fadeDurationInMilliseconds * source.WaveFormat.SampleRate) / 1000);
+            fadeInSamples = (int)(fadeDurationInSeconds * source.WaveFormat.SampleRate);
+        }
+    }
+
+
+    public void SetFadeInSamples(int fadeDurationInSamples) {
+        lock (lockObject) {
+            fadeInStart = 0;
+            fadeInSamples = fadeDurationInSamples;
         }
     }
 
     /// <summary>
     /// Requests that a fade-out begins (will start on the next call to Read)
     /// </summary>
-    /// <param name="fadeDurationInMilliseconds">Duration of fade in milliseconds</param>
-    public void SetFadeOut(double fadeAfterMilliseconds, double fadeDurationInMilliseconds) {
+    /// <param name="fadeDurationInSeconds">Duration of fade in seconds</param>
+    public void SetFadeOutSeconds(double fadeAfterSeconds, double fadeDurationInSeconds) {
         lock (lockObject) {
-            fadeOutStart = (int)((fadeAfterMilliseconds * source.WaveFormat.SampleRate) / 1000);
-            fadeOutSamples = (int)((fadeDurationInMilliseconds * source.WaveFormat.SampleRate) / 1000);
+            fadeOutStart = (int)(fadeAfterSeconds * source.WaveFormat.SampleRate);
+            fadeOutSamples = (int)(fadeDurationInSeconds * source.WaveFormat.SampleRate);
         }
     }
+
+    public void SetFadeOutSamples(int fadeAfterSamples, int fadeDurationInSamples) {
+        lock (lockObject) {
+            fadeOutStart = fadeAfterSamples;
+            fadeOutSamples = fadeDurationInSamples;
+        }
+    }
+
 
     public void SetFadeOut(TimeSpan FadeOutStartPosition, TimeSpan FadeOutLength) {
         lock (lockObject) {

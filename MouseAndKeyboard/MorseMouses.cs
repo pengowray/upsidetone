@@ -7,15 +7,15 @@ using System.Text;
 using System.Threading.Tasks;
 
 using ManyMouseSharp;
-using UpSidetone.Sound;
+using upSidetone.Sound;
 using static System.Windows.Forms.VisualStyles.VisualStyleElement.TrackBar;
 using static ManyMouseSharp.ManyMouse;
 //using static System.Console;
-using static UpSidetone.MainWindow;
+using static upSidetone.MainWindow;
 
 // https://github.com/Eideren/ManyMouseSharp/blob/master/ManyMouseTest/Program.cs
 
-namespace UpSidetone.MouseAndKeyboard {
+namespace upSidetone.MouseAndKeyboard {
     public class MorseMouses : IDisposable {
         const int NON_DEVICE_LABELS = 2; // "none" and "all"
         const string NONE_LABEL = "(none)"; // todo: rename to "(none watched)" or none in background or something

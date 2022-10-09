@@ -1,5 +1,5 @@
 ﻿using IPrompt;
-using UpSidetone.Sound;
+using upSidetone.Sound;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -15,11 +15,11 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
-using UpSidetone.MidiMorse;
-using UpSidetone.MouseAndKeyboard;
+using upSidetone.MidiMorse;
+using upSidetone.MouseAndKeyboard;
 using System.Runtime.Intrinsics.Arm;
 
-namespace UpSidetone {
+namespace upSidetone {
     /// <summary>
     /// Interaction logic for MainWindow.xaml
     /// </summary>

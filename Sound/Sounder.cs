@@ -1,27 +1,22 @@
-﻿using NAudio.Wave.SampleProviders;
-using NAudio.Wave;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using NAudio.Mixer;
-using NAudio.CoreAudioApi;
 using System.Windows.Forms;
 using System.Management;
 using System.Windows.Media.Animation;
+using NAudio.Mixer;
+using NAudio.CoreAudioApi;
 using NAudio.Dsp;
+using NAudio.Wave.SampleProviders;
+using NAudio.Wave;
 //using NWaves.Audio;
 
-namespace UpSidetone.Sound
+namespace upSidetone.Sound
 {
     //TODO: [Flags] ?
-    public enum Lever {
-        None,
-        StraightKey,
-        Dits,
-    }
 
     public enum KeyerMode {
         None,
@@ -30,13 +25,14 @@ namespace UpSidetone.Sound
         //BestGuess // 
     }
 
-    public class Sounder : IDisposable {
+    // replaced with Sounder2
 
-        List<Lever> Down = new(); // keys pressed and in what order
+    public class Sounder_Old : IDisposable {
+
+        List<LeverKind> Down = new(); // keys pressed and in what order
 
         float AttackSeconds = 0.015f;
         float ReleaseSeconds = 0.015f;
-
         const double wpm = 12.0;
         double ditSeconds = 60.0 / (50.0 * wpm);
 
@@ -57,7 +53,7 @@ namespace UpSidetone.Sound
 
         private bool disposedValue;
 
-        public Sounder(AudioOut audioOut) {
+        public Sounder_Old(AudioOut audioOut) {
             AudioOut = audioOut;
         }
 
@@ -90,7 +86,7 @@ namespace UpSidetone.Sound
 
         }
 
-        private void AddDownLever(Lever lever) {
+        private void AddDownLever(LeverKind lever) {
             lock (Down) {
                 if (Down.Contains(lever)) {
                     Down.Remove(lever); // make sure it's on the end
@@ -99,7 +95,7 @@ namespace UpSidetone.Sound
             }
         }
 
-        private void RemoveDownLever(Lever lever) {
+        private void RemoveDownLever(LeverKind lever) {
             lock (Down) {
                 if (Down.Contains(lever)) {
                     Down.Remove(lever);
@@ -108,17 +104,17 @@ namespace UpSidetone.Sound
         }
 
 
-        public void DitKeyDown(bool force = false) {
+        public void DoDitKeyDown(bool force = false) {
             //FadeInOutSampleProvider
             //ConcatenatingSampleProvider
             //EnvelopeGenerator
 
-            if (!force && Down.LastOrDefault() == Lever.Dits) {
+            if (!force && Down.LastOrDefault() == LeverKind.Dits) {
                 // already down
                 return;
             }
 
-            AddDownLever(Lever.Dits);
+            AddDownLever(LeverKind.Dits);
 
             if (true) {
 
@@ -133,8 +129,9 @@ namespace UpSidetone.Sound
                 }
                 //todo: dont allow negative time
                 var wave = Sine.Take(TimeSpan.FromSeconds(ditSeconds));
+                
                 var faded = new FadeOutSampleProvider(wave);
-                faded.SetFadeIn(AttackSeconds * 1000);
+                faded.SetFadeInSeconds(AttackSeconds * 1000);
                 //faded.SetFadeOut((ditSeconds - ReleaseSeconds) * 1000.0, ReleaseSeconds * 1000.0);
                 faded.FadeEnding(TimeSpan.FromSeconds(ReleaseSeconds), TimeSpan.FromSeconds(ditSeconds));
                 //TODO: append dit silence
@@ -165,10 +162,10 @@ namespace UpSidetone.Sound
         private void DitDoneCheck(Object? info) {
             StraightAdsr = null;
             var last = Down.LastOrDefault();
-            if (last == Lever.Dits) {
+            if (last == LeverKind.Dits) {
                 // dit get still down
-                DitKeyDown(force: true);
-            } else if (last == Lever.StraightKey){
+                DoDitKeyDown(force: true);
+            } else if (last == LeverKind.Straight){
                 // dit key was released and straight key is waiting
                 StraightKeyDown(1, force: true); 
             }
@@ -179,12 +176,12 @@ namespace UpSidetone.Sound
             // https://csharp.hotexamples.com/examples/NAudio.Wave/DirectSoundOut/Play/php-directsoundout-play-method-examples.html
 
             var previousLast = Down.LastOrDefault();
-            AddDownLever(Lever.StraightKey);
+            AddDownLever(LeverKind.Straight);
 
-            if (previousLast == Lever.Dits) {
+            if (previousLast == LeverKind.Dits) {
                 return; // wait until dit finished
 
-            } else if (previousLast == Lever.StraightKey) {
+            } else if (previousLast == LeverKind.Straight) {
                 // nothing to do 
                 if (!force) return;
             }
@@ -218,13 +215,13 @@ namespace UpSidetone.Sound
         }
 
         public void StraightKeyUp() {
-            RemoveDownLever(Lever.StraightKey);
+            RemoveDownLever(LeverKind.Straight);
             StraightAdsr?.Stop();
             StraightAdsr = null;
         }
 
         public void DitsKeyUp() {
-            RemoveDownLever(Lever.Dits);
+            RemoveDownLever(LeverKind.Dits);
         }
 
         protected virtual void Dispose(bool disposing) {

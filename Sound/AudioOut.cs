@@ -15,7 +15,7 @@ using NAudio.Wave.SampleProviders;
 using NAudio.Wave;
 //using NWaves.Audio;
 
-namespace UpSidetone.Sound
+namespace upSidetone.Sound
 {
     public class AudioOut : IDisposable {
 
@@ -39,7 +39,8 @@ namespace UpSidetone.Sound
         const string PRE_WAVE = "MME: ";
 
         // "DirectSound is basically just a DirectX-related Interface to the Windows Audio Session API (WASAPI) underneath."
-        const string PRE_DS = "DS: "; // 
+        // Apparently called "Direct-X" in VoiceMeeter, maybe in older versions?
+        const string PRE_DS = "DS: "; 
 
         const string PRE_WASAPI = "WDM: "; // WASAPI is called WDM in VoiceMeeter; related to KS (Kernel Streaming)
         const string PRE_ASIO = "ASIO: ";
@@ -55,6 +56,8 @@ namespace UpSidetone.Sound
         private string? DeviceName;
 
         private bool disposedValue;
+
+        string ErrorMsg = null; // Error when loading driver
 
         public AudioOut() {
         }
@@ -80,6 +83,10 @@ namespace UpSidetone.Sound
         }
 
         public string GetReport() {
+            if (ErrorMsg != null) {
+                return ErrorMsg;
+            }
+
             string waveFormat = OutDevice?.OutputWaveFormat?.ToString() ?? "";
             return waveFormat + "\n" + GetLatencyReport();
         }
@@ -326,6 +333,7 @@ namespace UpSidetone.Sound
                     OutDevice?.Init(Mixer);
                     OutDevice?.Play();
                     MainWindow.DebugOut($"Format found ({freq}Hz): {Format?.ToString()}");
+                    ErrorMsg = null;
                     return;
 
                 } catch (Exception e) {
@@ -333,7 +341,7 @@ namespace UpSidetone.Sound
                     //'AsioException' is inaccessible due to its protection level
                     //if ((e is System.InvalidOperationException || e.GetType().ToString() == "NAudio.Wave.Asio.AsioException") &&
                     // screw this, just use the message
-                    if (e.Message.StartsWith("Can not found a device") || e.Message.Contains("ASE_NotPresent")) {
+                    if (e.Message.StartsWith("Can not found a device") || e.Message.Contains("ASE_NotPresent") || e.Message.Contains("0x54f)")) {
                         // error isn't with bitrate, so bail out without trying every bitrate
 
                         // When "DUO-CAPTURE EX" is busy because VoiceMeeter is hogging it:
@@ -343,8 +351,22 @@ namespace UpSidetone.Sound
                         // trying to use Realtek ASIO (because needs headphones/speaker plugged in and set up)
                         // (NAudio.Wave.Asio.AsioException): "Error code [ASE_NotPresent] while calling ASIO method <setSampleRate>, "
 
-                        string err1 = $"driverCreateException ({e?.GetType()}): " + e?.Message?.ToString();
+                        // error but it happens later or in a different thread
+                        // "Focusrite USB ASIO" not connected to PC:
+                        // ASIO:  error (System.InvalidOperationException): Cannot open Focusrite USB ASIO. (Error code: 0x54f)
+                        // Error. Unrecognized: ASIO: Focusrite USB ASIO
+
+                        string err1 = $"Device busy or not found: ({e?.GetType()}): " + e?.Message?.ToString();
                         MainWindow.DebugOut(err1);
+                        ErrorMsg = "Device busy or not found";
+                        return;
+                    }
+
+                    if (e.Message.Contains("ASE_HWMalfunction")) {
+                        // never seen so far
+                        string err1 = $"Could not init: ({e?.GetType()}): " + e?.Message?.ToString();
+                        MainWindow.DebugOut(err1);
+                        ErrorMsg = $"ASIO driver is reporting hardware malfunction (ASE_HWMalfunction): {e?.Message}";
                         return;
                     }
 
@@ -367,18 +389,19 @@ namespace UpSidetone.Sound
 
                     //asio codes
                     //ASE_OK = 0,             // This value will be returned whenever the call succeeded
-	                //ASE_SUCCESS = 0x3f4847a0,	// unique success return value for ASIOFuture calls
-	                //ASE_NotPresent = -1000, // hardware input or output is not present or available
-	                //ASE_HWMalfunction,      // hardware is malfunctioning (can be returned by any ASIO function)
-	                //ASE_InvalidParameter,   // input parameter invalid
-	                //ASE_InvalidMode,        // hardware is in a bad mode or used in a bad mode
-	                //ASE_SPNotAdvancing,     // hardware is not running when sample position is inquired
-	                //ASE_NoClock,            // sample clock or rate cannot be determined or is not present
-	                //ASE_NoMemory            // not enough memory for completing the request
+                    //ASE_SUCCESS = 0x3f4847a0,	// unique success return value for ASIOFuture calls
+                    //ASE_NotPresent = -1000, // hardware input or output is not present or available
+                    //ASE_HWMalfunction,      // hardware is malfunctioning (can be returned by any ASIO function)
+                    //ASE_InvalidParameter,   // input parameter invalid
+                    //ASE_InvalidMode,        // hardware is in a bad mode or used in a bad mode
+                    //ASE_SPNotAdvancing,     // hardware is not running when sample position is inquired
+                    //ASE_NoClock,            // sample clock or rate cannot be determined or is not present
+                    //ASE_NoMemory            // not enough memory for completing the request
 
-                    string err = $"driverCreateException ({e?.GetType()}): " + e?.Message?.ToString();
-                    //Console.WriteLine(err);
-                    MainWindow.DebugOut(err);
+                    string err2 = $"Could not init: ({e?.GetType()}): " + e?.Message?.ToString();
+                    //note: e.Message may contain random text?
+                    ErrorMsg = $"Could not init device. ({e?.GetType()})"; // may be nulled again if good parameters found
+                    MainWindow.DebugOut(err2);
                 }
 
                 // No info in OutDevice until it's Init'd

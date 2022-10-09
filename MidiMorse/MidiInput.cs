@@ -5,11 +5,11 @@ using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 
-using UpSidetone;
-using UpSidetone.Sound;
+using upSidetone;
+using upSidetone.Sound;
 using NAudio.Midi;
 
-namespace UpSidetone.MidiMorse {
+namespace upSidetone.MidiMorse {
 
     public class MidiInput : IDisposable {
 

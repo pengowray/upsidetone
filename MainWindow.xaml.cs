@@ -15,9 +15,9 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
-using upSidetone.MidiMorse;
-using upSidetone.MouseAndKeyboard;
+using upSidetone.InputDevices;
 using System.Runtime.Intrinsics.Arm;
+using upSidetone.InputDevices;
 
 namespace upSidetone {
     /// <summary>

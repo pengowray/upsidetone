@@ -27,7 +27,7 @@ using static upSidetone.MainWindow;
 
 // or just use ManyMouseSharp (nuget)
 
-namespace upSidetone.MouseAndKeyboard {
+namespace upSidetone.InputDevices {
     public class MorseMouses : IDisposable {
         const int NON_DEVICE_LABELS = 2; // "none" and "all"
         const string NONE_LABEL = "(none)"; // todo: rename to "(none watched)" or none in background or something

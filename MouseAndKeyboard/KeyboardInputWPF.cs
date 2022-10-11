@@ -11,14 +11,9 @@ namespace upSidetone.MouseAndKeyboard {
 
         // keyboard handling for a Windows (WPF) app
 
-        ToneMaker Sounder;
+        public Levers Levers;
 
         public KeyboardInputWPF() {
-        }
-
-        public void SetSounder(ToneMaker sounder) {
-            //Note: MidiInput doesn't manage Sounder and doesn't dispose of it
-            Sounder = sounder;
         }
 
         public void KeyEvent(KeyEventArgs e) {
@@ -27,15 +22,15 @@ namespace upSidetone.MouseAndKeyboard {
 
             if (e.IsDown) {
                 if (e.Key == Key.LeftCtrl || e.Key == Key.OemOpenBrackets || e.Key == Key.Z || e.Key == Key.Left) {
-                    Sounder.StraightKeyDown(1);
+                    Levers?.PushLeverDown(VirtualLever.Left);
                 } else if (e.Key == Key.RightCtrl || e.Key == Key.OemCloseBrackets || e.Key == Key.X || e.Key == Key.Right) {
-                    Sounder.StraightKeyDown(2);
+                    Levers?.PushLeverDown(VirtualLever.Right);
                 }
             } else if (e.IsUp) {
                 if (e.Key == Key.LeftCtrl || e.Key == Key.OemOpenBrackets || e.Key == Key.Z || e.Key == Key.Left) {
-                    Sounder.StraightKeyUp();
+                    Levers?.ReleaseLever(VirtualLever.Left);
                 } else if (e.Key == Key.RightCtrl || e.Key == Key.OemCloseBrackets || e.Key == Key.X || e.Key == Key.Right) {
-                    Sounder.StraightKeyUp(); 
+                    Levers?.ReleaseLever(VirtualLever.Right);
                 }
             }
 

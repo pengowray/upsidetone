@@ -31,6 +31,7 @@ namespace upSidetone {
 
         AudioOut AudioOut;
         ToneMaker Sounder;
+        Levers Levers;
         MidiInput MidiInput;
         KeyboardInputWPF KeyboardInput;
         MorseMouses MorseMouses;
@@ -43,13 +44,18 @@ namespace upSidetone {
             Closed += MainWindow_Closed;
 
             InitializeComponent();
+
+            Levers = new Levers();
+
             MidiInput = new MidiInput();
-            MidiInput.Enable(Sounder); // sounder will be null but that's ok
+            MidiInput.Levers = Levers;
+            //MidiInput.Enabled = true;
 
             KeyboardInput = new KeyboardInputWPF(); //todo: Enable()
+            KeyboardInput.Levers = Levers;
 
             MorseMouses = new MorseMouses();
-            MorseMouses.Sounder = Sounder;
+            MorseMouses.Levers = Levers;
             MorseMouses.StartPolling();
 
             //GetOrCreateSounder(); // create default?
@@ -81,10 +87,12 @@ namespace upSidetone {
                 AudioOut.Enable(selected, Latency);
                 Sounder = new ToneMaker(AudioOut);
                 Sounder.Enable();
+                Sounder.ListenToLevers(Levers);
 
-                MidiInput?.SetSounder(Sounder);
-                KeyboardInput?.SetSounder(Sounder);
-                MorseMouses?.SetSounder(Sounder);
+                //MidiInput?.SetLevers(Sounder);
+                //KeyboardInput?.SetSounder(Sounder);
+                //MorseMouses?.SetSounder(Sounder);
+
 
                 DeviceInfoText.Text = AudioOut?.GetReport() ?? "";
                 ////(commented out): Offer help? This is too much to squeeze in here
@@ -139,19 +147,19 @@ namespace upSidetone {
             var sounder = GetOrCreateSounder();
             if (e.LeftButton == MouseButtonState.Pressed) {
                 //Sounder?.StraightKeyDown(1);
-                Sounder?.DitKeyDown();
+                Levers?.PushLeverDown(VirtualLever.Left);
             } else {
-                Sounder?.StraightKeyDown(1);
+                Levers?.ReleaseLever(VirtualLever.Right);
             }
         }
 
         private void Button_MouseUp(object sender, MouseButtonEventArgs e) {
             if (e.LeftButton == MouseButtonState.Released) {
-                Sounder?.DitsKeyUp();
+                Levers?.ReleaseLever(VirtualLever.Left);
             } 
 
-            if (e.RightButton == MouseButtonState.Released) { 
-                Sounder?.StraightKeyUp();
+            if (e.RightButton == MouseButtonState.Released) {
+                Levers?.ReleaseLever(VirtualLever.Right);
             }
         }
 
@@ -205,7 +213,7 @@ namespace upSidetone {
                     Sounder?.Dispose();
                     MidiInput?.Dispose();
                     MorseMouses?.Dispose();
-
+                    //Levers?.Dispose(); // TODO
                 }
 
                 // free unmanaged resources (unmanaged objects) and override finalizer
@@ -216,6 +224,7 @@ namespace upSidetone {
                 AudioOut = null;
                 MidiInput = null;
                 Me = null;
+                Levers = null;
 
                 disposedValue = true;
             }
@@ -264,7 +273,9 @@ namespace upSidetone {
         }
 
         private void Grid_LostFocus(object sender, RoutedEventArgs e) {
-            Sounder?.StraightKeyUp();
+            //TODO: only release for the key button
+            Levers?.ReleaseLever(VirtualLever.Left);
+            Levers?.ReleaseLever(VirtualLever.Right);
 
         }
 

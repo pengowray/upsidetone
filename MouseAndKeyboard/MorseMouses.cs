@@ -15,6 +15,18 @@ using static upSidetone.MainWindow;
 
 // https://github.com/Eideren/ManyMouseSharp/blob/master/ManyMouseTest/Program.cs
 
+// research
+// mutliple mice: [2016] 
+// via: https://www.codeproject.com/questions/346799/how-to-handle-multiple-mouse-in-csharp
+// C++ DLL: http://pastebin.com/0Szi8ga6
+// C# script for Unity: http://pastebin.com/4h3CqpYy
+
+// multiple mice and keyboards:
+// https://social.msdn.microsoft.com/Forums/windows/en-US/6f8bb366-d0b4-40a9-8004-367f186cd639/using-raw-input-from-c-to-handle-multiple-mouses?forum=winforms
+// = https://web.archive.org/web/20220919100500/https://social.msdn.microsoft.com/Forums/windows/en-US/6f8bb366-d0b4-40a9-8004-367f186cd639/using-raw-input-from-c-to-handle-multiple-mouses?forum=winforms
+
+// or just use ManyMouseSharp (nuget)
+
 namespace upSidetone.MouseAndKeyboard {
     public class MorseMouses : IDisposable {
         const int NON_DEVICE_LABELS = 2; // "none" and "all"
@@ -26,17 +38,12 @@ namespace upSidetone.MouseAndKeyboard {
         Task? polling;
         bool stopPolling = false;
         private bool disposedValue;
-        public ToneMaker? Sounder;
+        public Levers? Levers;
 
         List<string>? Mouses = null; // created on DoInit()
 
         public int ChosenMouse = NONE_VALUE;
         public bool ListenToAll = false; // override chosen and use all (e.g. while mousing over test area)
-
-        public void SetSounder(ToneMaker sounder) {
-            //Note: doesn't manage Sounder and doesn't dispose of it
-            Sounder = sounder;
-        }
 
         public void StartPolling() {
             if (polling != null && !polling.IsCompleted) {
@@ -93,15 +100,15 @@ namespace upSidetone.MouseAndKeyboard {
                             if (ListenToAll || ChosenMouse == ALL_VALUE || ChosenMouse == mme.device + NON_DEVICE_LABELS ) {
                                 if (mme.item == 0) {
                                     if (mme.value == 1) {
-                                        Sounder?.DitKeyDown();
+                                        Levers?.PushLeverDown(VirtualLever.Left);
                                     } else {
-                                        Sounder?.DitsKeyUp();
+                                        Levers?.ReleaseLever(VirtualLever.Left);
                                     }
                                 } else {
                                     if (mme.value == 1) {
-                                        Sounder?.StraightKeyDown();
+                                        Levers?.PushLeverDown(VirtualLever.Right);
                                     } else {
-                                        Sounder?.StraightKeyUp();
+                                        Levers?.ReleaseLever(VirtualLever.Right);
                                     }
                                 }
                                 WriteLine($"({mme.device}) {DeviceName(mme.device)} Button {mme.item}: {(mme.value == 1 ? "Down" : "Up")}");

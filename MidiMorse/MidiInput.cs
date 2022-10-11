@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using upSidetone;
 using upSidetone.Sound;
 using NAudio.Midi;
+using System.Windows.Forms;
 
 namespace upSidetone.MidiMorse {
 
@@ -15,7 +16,9 @@ namespace upSidetone.MidiMorse {
 
         // https://github.com/naudio/NAudio/blob/master/Docs/MidiInAndOut.md
 
-        ToneMaker? Sounder;
+        public Levers? Levers;
+        bool Enabled = true; //TODO: put all notes up when disabled
+
         MidiIn? Midi;
         private bool disposedValue;
         Dictionary<int, string> DownNotes = new(); // notenumber -> description
@@ -25,12 +28,6 @@ namespace upSidetone.MidiMorse {
         const string ALL_LABEL = "(any)"; //TODO
 
 
-        public void Enable(ToneMaker? sounder = null) {
-            //Sounder = sounder ?? new Sounder();
-            Sounder = sounder;
-            //Sounder.Enable();
-        }
-
         public IEnumerable<string> DeviceNames() {
 
             yield return NONE_LABEL; // "(none)"
@@ -39,11 +36,6 @@ namespace upSidetone.MidiMorse {
             for (int device = 0; device < MidiIn.NumberOfDevices; device++) {
                 yield return MidiIn.DeviceInfo(device).ProductName;
             }
-        }
-
-        public void SetSounder(ToneMaker sounder) {
-            //Note: MidiInput doesn't manage Sounder and doesn't dispose of it
-            Sounder = sounder;
         }
 
         public bool SelectDevice(string selectedDevice) {
@@ -92,11 +84,20 @@ namespace upSidetone.MidiMorse {
             return true;
         }
 
+        private VirtualLever NoteToLever(int notenum) {
+            // TODO: let user define
+            // notes go left, right, left, right...
+            bool left = ((notenum % 2) == 0);
+            var lever = (left ? VirtualLever.Left : VirtualLever.Right);
+            return lever;
+
+        }
 
         private void MidiIn_MessageReceived(object? sender, MidiInMessageEventArgs e) {
             //MainWindow.Debug(e?.ToString()); 
             if (e?.MidiEvent?.CommandCode == MidiCommandCode.NoteOn) {
-                Sounder?.StraightKeyDown();
+
+                //Levers?.StraightKeyDown();
 
                 var info = e.MidiEvent as NoteOnEvent;
                 if (info != null) {
@@ -105,16 +106,18 @@ namespace upSidetone.MidiMorse {
                     DownNotes[notenum] = name;
 
                     //TODO: use an event (have main window listen to update events)
+                    Levers?.PushLeverDown(NoteToLever(notenum));
+
                     MainWindow.Me.RefreshPianoDisplay();
                 }
 
             } else if (e?.MidiEvent?.CommandCode == MidiCommandCode.NoteOff) {
-                Sounder?.StraightKeyUp();
-
                 var info = e.MidiEvent as NoteEvent;
                 if (info != null) {
                     var notenum = info.NoteNumber;
                     DownNotes.Remove(notenum);
+
+                    Levers?.ReleaseLever(NoteToLever(notenum));
 
                     //TODO: use an event (have main window listen to update events)
                     MainWindow.Me.RefreshPianoDisplay();
@@ -140,8 +143,8 @@ namespace upSidetone.MidiMorse {
                 // TODO: free unmanaged resources (unmanaged objects) and override finalizer
                 // TODO: set large fields to null
 
-                //Note: MidiInput doesn't manage Sounder and doesn't dispose of it
-                Sounder = null; // let something else dispose it
+                //Note: MidiInput doesn't manage Levers and doesn't dispose of it
+                Levers = null; // let something else dispose it
                 Midi?.Dispose();
 
                 disposedValue = true;

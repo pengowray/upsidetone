@@ -16,16 +16,10 @@ using NAudio.Wave;
 
 namespace upSidetone.Sound
 {
-    //TODO: [Flags] ?
-
-    public enum KeyerMode {
-        None,
-        StraightKey,
-        Bug,
-        //BestGuess // 
-    }
 
     // replaced with ToneMaker2
+
+    // delete me
 
     public class ToneMaker_Old : IDisposable {
 
@@ -36,7 +30,7 @@ namespace upSidetone.Sound
         const double wpm = 12.0;
         double ditSeconds = 60.0 / (50.0 * wpm);
 
-        KeyerMode KeyerMode = KeyerMode.Bug;
+        KeyerMode KeyerMode = KeyerMode.BugStyle;
 
         AudioOut AudioOut;
         public WaveFormat? Format => AudioOut?.Format;

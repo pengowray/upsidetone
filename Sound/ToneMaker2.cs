@@ -44,6 +44,26 @@ namespace upSidetone.Sound {
             AudioOut.Mixer.AddMixerInput(ScoreProvider);
         }
 
+        public void ListenToLevers(Levers levers) {
+            levers.LeverDown += Levers_LeverDown;
+            levers.LeverUp += Levers_LeverUp;
+            levers.LeverDoubled += Levers_LeverDoubled;
+        }
+
+        private void Levers_LeverDoubled(Levers levers, LeverKind lever, bool doublePressed, bool priorityIncreased) {
+            // todo
+        }
+
+        private void Levers_LeverUp(Levers levers, LeverKind lever) {
+            
+        }
+
+        private void Levers_LeverDown(Levers levers, LeverKind lever) {
+            if (lever == LeverKind.Dits) {
+                PlayDitNext();
+            }
+        }
+
         public void StraightKeyDown(int meh = 0) {
             PlayDitNext();
         }
@@ -103,6 +123,7 @@ namespace upSidetone.Sound {
             Dispose(disposing: true);
             GC.SuppressFinalize(this);
         }
+
     }
 
 

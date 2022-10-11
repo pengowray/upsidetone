@@ -66,7 +66,7 @@ namespace upSidetone.Sound {
         A_Preset_DPSK_Dah = InfiniteWave | A_Smoothed | Oscillator_90,
         A_Preset_DPSK_Other = InfiniteWave | A_Smoothed + Oscillator_0, // straight key or unknown
 
-        // Decay Presets
+        // Decay Presets [todo: sinc/erf/etc]
         D_Preset_Smooth = D_Smoothed | D_NoZeroCross,
         D_Preset_Sharp = D_CrossZero | D_NoSmooth,
 

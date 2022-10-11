@@ -16,11 +16,17 @@ namespace upSidetone.Sound {
         // Can init with current Pos and when to Start sample
 
         // Breaks ISampleProvider:
-        //  - Read() returns -1 when empty signal
         //  - Assumes single channel (mono)
+        //  - [fixed] Read() returns -1 when empty signal -- no longer doing this for now
+
+        // Could be using OffsetSampleProvider for the skip part: https://github.com/naudio/NAudio/blob/master/NAudio.Core/Wave/SampleProviders/OffsetSampleProvider.cs
 
         public long StartAt { set; get; }
         public long nSamples { set; get; }
+
+        public bool IsLockedIn() {
+            return LockedIn;
+        }
 
         bool LockedIn;
         ISampleProvider? Chosen;
@@ -44,7 +50,11 @@ namespace upSidetone.Sound {
             if (!LockedIn) {
                 if (StartAt > nSamples + count) {
                     nSamples += count;
-                    return -1; // special "no change" signal i made up; optimization 
+                    //return -1; // special "no change" signal i made up; optimization  (not sure if it was working so commented out)
+                    for (int n = 0; n < count; n++) {
+                        buffer[n + offset] = 0;
+                    }
+                    return count;
 
                 } else {
                     //int readOffset = (int)(Pos + offset - Start);

@@ -22,7 +22,7 @@ namespace upSidetone.Sound {
         double ditSeconds = 60.0 / (50.0 * wpm);
 
         SwitchableDelayedSound Playing;
-        SwitchableDelayedSound PlayNext;
+        SwitchableDelayedSound PlayingNext;
         SwitchableDelayedSound AndThen;
         AudioOut AudioOut;
         //ScoreProvider ScoreProvider;
@@ -55,31 +55,41 @@ namespace upSidetone.Sound {
         }
 
         private void Levers_LeverUp(Levers levers, LeverKind lever) {
-            
+            //TODO: check if correct lever released
+            //TODO: check if other lever is down
+
+            PlayingNext?.SetChoice(null);
         }
 
         private void Levers_LeverDown(Levers levers, LeverKind lever) {
+
+
             if (lever == LeverKind.Dits) {
-                PlayDitNext();
+                PlayBeepNext(1);
+            } else if (lever == LeverKind.Dahs) {
+                PlayBeepNext(3);
+            } else {
+                PlayBeepNext(8);
             }
         }
 
+        [Obsolete]
         public void StraightKeyDown(int meh = 0) {
-            PlayDitNext();
+            PlayBeepNext(1);
         }
+        [Obsolete]
         public void StraightKeyUp() {
             //PlayDitNext();
         }
 
-        public void PlayDitNext() {
-            long ditLenSamples = (long)(ditSeconds * AudioOut.Format.SampleRate);
-            //long currentPos = ScoreProvider.CurrentSamplePos; // used here for calculating waveform phase; not for positioning the note
-            long currentPos = 0; // todo
-            var beep = Beep.MakeBeep(currentPos, ditLenSamples, johncage: ditLenSamples, options: BeepAttackDecay.Preset_Smooth);
-            var sound = new SwitchableDelayedSound(beep);
-            //sound.StartAt = // TODO: delay
+        private void PlayBeepNext(double len) {
+            var sound = MakeBeep(len);
+            ScoreProvider.AddMixerInput(sound);
             Playing = sound;
-            ScoreProvider.AddMixerInput(sound); // TODO
+
+            var nextSound = MakeBeep(len, len + 1);
+            PlayingNext = nextSound;
+            ScoreProvider.AddMixerInput(PlayingNext);
 
             //test: just beep (works)
             //AudioOut?.Mixer?.AddMixerInput(beep);
@@ -90,14 +100,19 @@ namespace upSidetone.Sound {
             //ReleaseSeconds = ReleaseSeconds // does not get used unless stopping early
         }
 
-        internal void DitKeyDown() {
-            //throw new NotImplementedException();
-        }
+        private SwitchableDelayedSound MakeBeep(double ditLen, double whenInDits = 0) {
+            long ditLenSamples = (long)(ditSeconds * AudioOut.Format.SampleRate);
+            long beepSamples = (long)(ditSeconds * ditLen * AudioOut.Format.SampleRate);
+            long whenSamples = (long)(ditSeconds * whenInDits * AudioOut.Format.SampleRate);
+            //long currentPos = ScoreProvider.CurrentSamplePos; // used here for calculating waveform phase; not for positioning the note
+            long currentPos = 0 + whenSamples; // todo: replace 0 with currentPos depending
+            var beep = Beep.MakeBeep(currentPos, beepSamples, johncage: ditLenSamples, options: BeepAttackDecay.Preset_Smooth);
+            var sound = new SwitchableDelayedSound(beep);
+            sound.StartAt = whenSamples;
+            //sound.StartAt = // TODO: delay
 
-        internal void DitsKeyUp() {
-            //throw new NotImplementedException();
+            return sound;
         }
-
 
         protected virtual void Dispose(bool disposing) {
             if (!disposedValue) {

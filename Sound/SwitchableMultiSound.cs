@@ -18,7 +18,7 @@ namespace upSidetone.Sound {
 
         // allows changing which ISampleProvider to use until first sample is Read()
 
-        // needlessly complex. use SwitchableSound instead
+        // needlessly complex. use SwitchableDelayedSound instead
 
         int Read(float[] buffer, int offset, int count) {
             if (!LockedIn) {

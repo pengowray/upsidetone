@@ -79,6 +79,8 @@ namespace upSidetone.Sound {
         public event LeverEvent? LeverUp;
         public event LeverDoublePressed? LeverDoubled;
 
+
+
         public IEnumerable<LeverKind> GetLeversDown() {
             return Down.AsEnumerable();
         }

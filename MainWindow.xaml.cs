@@ -15,8 +15,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
-using upSidetone.InputDevices;
-using System.Runtime.Intrinsics.Arm;
+
 using upSidetone.InputDevices;
 
 namespace upSidetone {
@@ -46,6 +45,7 @@ namespace upSidetone {
             InitializeComponent();
 
             Levers = new Levers();
+            Levers.Mode = KeyerMode.IambicA;
 
             MidiInput = new MidiInput();
             MidiInput.Levers = Levers;
@@ -149,7 +149,7 @@ namespace upSidetone {
                 //Sounder?.StraightKeyDown(1);
                 Levers?.PushLeverDown(VirtualLever.Left);
             } else {
-                Levers?.ReleaseLever(VirtualLever.Right);
+                Levers?.PushLeverDown(VirtualLever.Right);
             }
         }
 

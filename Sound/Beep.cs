@@ -76,6 +76,7 @@ namespace upSidetone.Sound {
         // General presets (attack + decay) InfiniteWave + defaults but Oscillator_90 for fun. [Oscillator may be anything.]
 
         Preset_Smooth  = ResetOscillator | Oscillator_0 | A_Smoothed | D_Smoothed | A_NoZeroCross | D_NoZeroCross,
+        Preset_SharpNoClick = ResetOscillator | Oscillator_0 | A_NoSmooth | D_NoSmooth | D_CrossZero,
         Preset_DoubleMilhouse = ResetOscillator | Oscillator_90 | A_NoSmooth | A_NoZeroCross | D_NoSmooth | D_Milhouse,
 
         // "unsynchronized" / "free running" osscillator. start and end at any phase without smoothing or other mitigation, but also not deliberate (so not Milhouse)
@@ -113,7 +114,7 @@ namespace upSidetone.Sound {
         //bool ReleaseQuantized; // end after crossing zero
         //bool OscillatorReset; // start at 0 degrees, sine 0; 
         BeepAttackDecay AttackDecayOptions = BeepAttackDecay.Preset_Smooth;
-        float AttackSeconds = 0.015f; 
+        float AttackSeconds = 0.015f;
         float ReleaseSeconds = 0.015f;
 
         float Frequency = 550;
@@ -121,7 +122,6 @@ namespace upSidetone.Sound {
         public Beep(WaveFormat format) {
             WaveFormat = format;
         }
-
         public ISampleProvider MakeBeep(long startSamples, long? lengthSamples, long? johncage, BeepAttackDecay options = BeepAttackDecay.Preset_Smooth) {
             //TODO: fader
 

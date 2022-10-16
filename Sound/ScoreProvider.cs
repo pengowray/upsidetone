@@ -12,14 +12,21 @@ using NAudio.Wave;
 // https://github.com/naudio/NAudio/blob/master/NAudio.Core/Wave/SampleProviders/MixingSampleProvider.cs
 // https://github.com/naudio/NAudio/blob/master/license.txt (Mit License: Copyright 2020 Mark Heath)
 
+// differences:
+// - keeps track of current sample (SampleCursor)
+// - defaults to ReadFully = true
+
 namespace upSidetone.Sound {
     /// <summary>
     /// A sample provider mixer, allowing inputs to be added and removed
     /// </summary>
     public class ScoreProvider : ISampleProvider {
+        public long SampleCursor = 0; // how many samples have been read ever
+
         private readonly List<ISampleProvider> sources;
         private float[] sourceBuffer;
         private const int MaxInputs = 1024; // protect ourselves against doing something silly
+
 
         /// <summary>
         /// Creates a new MixingSampleProvider, with no inputs, but a specified WaveFormat
@@ -31,6 +38,7 @@ namespace upSidetone.Sound {
             }
             sources = new List<ISampleProvider>();
             WaveFormat = waveFormat;
+            ReadFully = true;
         }
 
         /// <summary>
@@ -46,6 +54,7 @@ namespace upSidetone.Sound {
             if (this.sources.Count == 0) {
                 throw new ArgumentException("Must provide at least one input in this constructor");
             }
+            ReadFully = true;
         }
 
         /// <summary>
@@ -133,13 +142,24 @@ namespace upSidetone.Sound {
         /// <param name="count">Number of samples required</param>
         /// <returns>Number of samples read</returns>
         public int Read(float[] buffer, int offset, int count) {
+            long cursor = SampleCursor;
             int outputSamples = 0;
+            if (ReadFully) {
+                // set early for anyone adding new samples at SampleCursor 
+                SampleCursor += count;
+            }
+
             sourceBuffer = BufferHelpers.Ensure(sourceBuffer, count);
             lock (sources) {
                 int index = sources.Count - 1;
                 while (index >= 0) {
                     var source = sources[index];
-                    int samplesRead = source.Read(sourceBuffer, 0, count);
+                    int samplesRead;
+                    if (source is SwitchableDelayedSound sSource) {
+                        samplesRead = sSource.Read(sourceBuffer, 0, count, cursor);
+                    } else {
+                        samplesRead = source.Read(sourceBuffer, 0, count);
+                    }
                     int outIndex = offset;
                     for (int n = 0; n < samplesRead; n++) {
                         if (n >= outputSamples) {
@@ -163,6 +183,9 @@ namespace upSidetone.Sound {
                     buffer[outputIndex++] = 0;
                 }
                 outputSamples = count;
+            }
+            if (!ReadFully) { // because already done if ReadFully
+                SampleCursor += outputSamples;
             }
             return outputSamples;
         }

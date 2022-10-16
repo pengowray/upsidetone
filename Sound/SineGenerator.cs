@@ -14,7 +14,7 @@ namespace upSidetone.Sound {
 
         private readonly WaveFormat waveFormat;
 
-        private long nSample;
+        private long nSample = 0;
         private long? EndingAfterSample;
         //private long? SilenceUntilSample; // TODO
 
@@ -112,7 +112,7 @@ namespace upSidetone.Sound {
         }
 
         public void EndInSamples(long samples) {
-            EndingAfterSample = samples + nSample;
+            EndingAfterSample = nSample + samples;
         }
 
         public void EndAt(TimeSpan time) {

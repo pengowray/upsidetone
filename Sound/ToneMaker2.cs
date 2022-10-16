@@ -10,6 +10,8 @@ using NAudio.Dsp;
 using NAudio.Wave.SampleProviders;
 using NAudio.Wave;
 using static System.Net.Mime.MediaTypeNames;
+using System.Windows.Navigation;
+using Voicemeeter;
 //using NWaves.Audio;
 
 namespace upSidetone.Sound {
@@ -29,14 +31,14 @@ namespace upSidetone.Sound {
         List<SwitchableDelayedSound> Playing = new();
         //public List<LeverKind> Played = new(); // dits and dahs. or just a string of ".-*" ?
 
-        //BeepAttackDecay Options = BeepAttackDecay.Preset_Smooth;
-        BeepAttackDecay Options = BeepAttackDecay.Preset_SharpNoClick;
+        BeepAttackDecay Options = BeepAttackDecay.Preset_Smooth;
+        //BeepAttackDecay Options = BeepAttackDecay.Preset_SharpNoClick; // not working? TODO (endless beep)
 
         //SwitchableDelayedSound AndThen;
 
         AudioOut AudioOut;
-        //ScoreProvider ScoreProvider;
-        MixingSampleProvider ScoreProvider;
+        ScoreProvider ScoreProvider;
+        //MixingSampleProvider ScoreProvider;
         Beep Beep;
         private bool disposedValue;
 
@@ -44,8 +46,8 @@ namespace upSidetone.Sound {
 
         public ToneMaker(AudioOut audioOut) {
             AudioOut = audioOut;
-            //ScoreProvider = new ScoreProvider(audioOut.Format);
-            ScoreProvider = new MixingSampleProvider(WaveFormat);
+            ScoreProvider = new ScoreProvider(WaveFormat);
+            //ScoreProvider = new MixingSampleProvider(WaveFormat);
             ScoreProvider.ReadFully = true;
             Beep = new Beep(WaveFormat);
         }
@@ -70,68 +72,66 @@ namespace upSidetone.Sound {
 
             //if bringing up active straight key...
 
-
-            //if (levers.Mode == )
-
-            var down = levers.GetLeversDown();
-            if (down.Any()) {
-                //TODO: e.g. do other lever
-
-            }
-
             var toUp = Playing.Where(sound => !sound.IsLockedIn && sound.Lever == lever);
-
-            foreach (var sound in toUp) {
-                if (sound != null) {
-                    sound.SetChoice(null);
-                    //toUp.SampleStarted -= Next_SampleStarted; //todo: need this for ones that wont ever be triggered
-                }
-            }
+            GetNextUpAndDeleteRest(true);
 
         }
 
 
         private void Levers_LeverDown(Levers levers, LeverKind lever) {
+            ThreeBeeps(levers, lever);
 
+        }
+
+        private SwitchableDelayedSound? GetNextUpAndDeleteRest(bool justdel = false) { 
             var next = Playing.FirstOrDefault(p => !p.IsLockedIn);
-            if (next != null) {
-                // todo: delete anything already after next in Playing
+            if (next == null) {
+                return null;
+            }
 
-                var beep = MakeBeep(lever);
-                next.SetChoice(beep);
-                
+            List<SwitchableDelayedSound> newPlaying = new();
+            foreach (var sound in Playing) {
+                if (!sound.IsLockedIn) {
+                    if (!justdel && !newPlaying.Any()) {
+                        newPlaying.Add(sound);
+                    } else {
+                        // delete
+                        ScoreProvider.RemoveMixerInput(sound);
+                        sound.SetChoice(null);
+                        sound.SampleStarted -= Next_SampleStarted;
+                    }
+                }
+            }
+            Playing = newPlaying;
+
+            return Playing.FirstOrDefault();
+        }
+
+
+        private void ThreeBeeps(Levers levers, LeverKind lever) {
+
+            //var next = Playing.FirstOrDefault(p => !p.IsLockedIn);
+            var next = GetNextUpAndDeleteRest();
+            if (next != null && !next.IsLockedIn) {
+
+                var beep = MakeBeep(lever, next);
 
                 // queue after next
-                var afterNextBeep = MakeBeep(lever);
-                if (next.Next != null) {
-                    next.Next.SetChoice(afterNextBeep);
-                } else {
-                    // this doesn't actually queue anything
-                    next.Next = afterNextBeep;
-                    next.Next.SampleStarted += Next_SampleStarted;
-                }
-
-                Playing.Add(beep.Next);
-                Playing.Add(afterNextBeep);
+                var afterNextBeep = MakeBeep(lever, beep);
                 return;
             }
 
             var sound = MakeBeep(lever);
-            ScoreProvider.AddMixerInput(sound);
-            Playing.Add(sound);
-            if (sound.Next != null) { // (should never be null)
-                sound.Next.SampleStarted += Next_SampleStarted; // to clear Playing list
-                Playing.Add(sound.Next);
-                if (lever == LeverKind.Dits || lever == LeverKind.Dahs) {
-                    //TODO: check if dit or dah next
-                    // queue next sound
-                    var nextBeep = MakeBeep(lever);
-                    sound.Next.SetChoice(nextBeep);
-                }
+
+            if (lever == LeverKind.Dits || lever == LeverKind.Dahs) {
+                //TODO: check if dit or dah next
+                // queue next sound
+                var nextBeep = MakeBeep(lever, sound);
+                var afterNextBeep = MakeBeep(lever, nextBeep);
+
             }
 
         }
-
 
         [Obsolete]
         public void StraightKeyDown(int meh = 0) {
@@ -145,7 +145,9 @@ namespace upSidetone.Sound {
 
         private void Next_SampleStarted(SwitchableDelayedSound sender) {
             sender.SampleStarted -= Next_SampleStarted;
-            
+            bool inPlaying = Playing.Contains(sender);
+
+            /*
             //TODO: lock first
             if (sender.Chosen == null) {
                 // clear played
@@ -160,18 +162,14 @@ namespace upSidetone.Sound {
                 }
                 Playing = NewPlaying;
             }
+            */
 
-            if (Playing.Count == 0 && (sender.Lever == LeverKind.Dits || sender.Lever == LeverKind.Dahs)) {
-                // queue up next
-                //if (sender.Next != null) // todo
-                //var nextSound = MakeBeep(sender.Lever, sender);
-                //Playing.Add(nextSound);
-                //nextSound.SampleStarted += Next_SampleStarted;
-                //ScoreProvider.AddMixerInput(nextSound);
+            if (inPlaying) {
+                ThreeBeeps(null, LeverKind.Dits);
             }
         }
 
-        private SwitchableDelayedSound MakeBeep(LeverKind lever, SwitchableDelayedSound afterThis = null) {
+        private SwitchableDelayedSound MakeBeep(LeverKind lever, SwitchableDelayedSound? afterThis = null) {
         
             //double ditLen, double whenInDits = 0;
             double? ditLen = null;
@@ -179,7 +177,7 @@ namespace upSidetone.Sound {
             if (lever == LeverKind.Dahs) ditLen = 3;
 
             long ditLenSamples = (long)(ditSeconds * WaveFormat.SampleRate);
-            long? beepSamples = ditLen.HasValue ? (long)(ditSeconds * ditLen * WaveFormat.SampleRate) : null;
+            long? beepSamples = ditLen.HasValue ? (long)(ditLen * ditSeconds * WaveFormat.SampleRate) : null;
 
             //long whenSamples = (long)(ditSeconds * whenInDits * AudioOut.Format.SampleRate);
             //long currentPos = ScoreProvider.CurrentSamplePos; // used here for calculating waveform phase; not for positioning the note
@@ -187,15 +185,31 @@ namespace upSidetone.Sound {
             long currentPos = 0; //  0 + whenSamples; // todo: replace 0 with currentPos depending on settings
 
             var beep = Beep.MakeBeep(currentPos, beepSamples, johncage: ditLenSamples, options: Options);
+            
+            // queue empty next? nah
+            //var next = new SwitchableDelayedSound(WaveFormat);
+            //next.StartAt = ditLenSamples;
+            //var beepWithNext = beep.FollowedBy(next);
+            //var sound = new SwitchableDelayedSound(beepWithNext);
 
-            var next = new SwitchableDelayedSound(WaveFormat);
-            next.StartAt = ditLenSamples;
-            var beepWithNext = beep.FollowedBy(next);
+            var sound = new SwitchableDelayedSound(beep);
+            //sound.Lever = lever;
+            //sound.Next = next;
 
-            var sound = new SwitchableDelayedSound(beepWithNext);
-            sound.Lever = lever;
-            sound.Next = next;
             if (beepSamples != null) sound.DurationSamples = beepSamples.Value + ditLenSamples;
+
+            if (afterThis != null) {
+                sound.StartAt = afterThis.StartAt + afterThis.DurationSamples;
+                if (afterThis.Next == null) {
+                    afterThis.Next = sound;
+                } else {
+                    //TODO: remove event
+                    afterThis.Next.SetChoice(sound);
+                }
+            } else {
+                //TODO: set to null and let it get autofilled... but then harder to queue after it
+                sound.StartAt = ScoreProvider.SampleCursor;
+            }
 
             //sound.StartAt = whenSamples;
             //sound.StartAt = // TODO: delay
@@ -204,6 +218,10 @@ namespace upSidetone.Sound {
             //StraightAdsr = new AdsrSampleProvider(faded.ToMono(1, 0)) {
             //AttackSeconds = AttackSeconds,
             //ReleaseSeconds = ReleaseSeconds // does not get used unless stopping early
+
+            Playing.Add(sound);
+            ScoreProvider.AddMixerInput(sound);
+            sound.SampleStarted += Next_SampleStarted; // to clear Playing list
 
             return sound;
         }

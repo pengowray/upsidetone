@@ -25,12 +25,12 @@ namespace upSidetone.Sound {
         // Could be using OffsetSampleProvider for the skip part: https://github.com/naudio/NAudio/blob/master/NAudio.Core/Wave/SampleProviders/OffsetSampleProvider.cs
 
         public long StartAt { set; get; }
-        public long SamplesCursor { set; get; }
+        public long SamplesCursor { private set; get; } // todo: (optionally?) disable and use external cursor (only?)
 
         public event SampleEvent SampleStarted;
 
 
-        
+
         public long DurationSamples { set; get; } // May include pause after sound; Info not internally used by this class.
         public LeverKind Lever { set; get; } // info not needed specifically by the class, but handy for reference
         public SwitchableDelayedSound Next { get; set; } // not used internally
@@ -55,11 +55,16 @@ namespace upSidetone.Sound {
             Chosen = initialChoice;
             WaveFormat = initialChoice.WaveFormat;
         }
-
-        
         int ISampleProvider.Read(float[] buffer, int offset, int count) {
+            return Read(buffer, offset, count, null);
+        }
+        public int Read(float[] buffer, int offset, int count, long? cursor) {
             if (!IsLockedIn) {
-                if (StartAt > SamplesCursor + count) {
+                // use provided cursor if available; otherwise fallback to our own cursor (SamplesCursor)
+                long cur = cursor.HasValue ? cursor.Value : SamplesCursor;
+
+                if (StartAt > cur + count) { 
+
                     SamplesCursor += count;
                     //return -1; // special "no change" signal i made up; optimization  (not sure if it was working so commented out)
                     for (int n = 0; n < count; n++) {
@@ -72,7 +77,7 @@ namespace upSidetone.Sound {
                     //int toRead = (int)(Pos + count - Start);
 
                     int i = 0;
-                    for (long pos = SamplesCursor; pos < SamplesCursor + count; pos++) {
+                    for (long pos = cur; pos < cur + count; pos++) {
                         if (pos == StartAt) {
                             //todo: could also give a final chance to change
                             SampleStarted?.Invoke(this); // todo: in a thread?

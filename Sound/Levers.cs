@@ -64,7 +64,7 @@ namespace upSidetone.Sound {
 
         //TODO: also track source of press (e.g. via which mouse button)
 
-        public KeyerMode Mode = KeyerMode.BugStyle;
+        public KeyerMode Mode = KeyerMode.IambicA;
 
         // ignore if pressed a second time when already down;
         // if true, LeverDoubled event will never fire, and double presses won't change the order of levers

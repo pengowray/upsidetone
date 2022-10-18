@@ -112,22 +112,22 @@ public class FadeOutSampleProvider : ISampleProvider {
         int sourceSamplesRead = source.Read(buffer, offset, count);
 
         lock (lockObject) {
-            for (int i = offset; i < offset + sourceSamplesRead; i++) {
+            for (int i = 0; i < sourceSamplesRead; i++) {
                 int samplePos = position + i;
 
                 if (fadeInSamples > 0) {
                     if (samplePos < fadeInStart) {
-                        buffer[i] = 0;
+                        buffer[i + offset] = 0;
                     } else if (samplePos >= fadeInStart && samplePos < (fadeInStart + fadeInSamples)) {
-                        buffer[i] *= (samplePos - fadeInStart) / (float)fadeInSamples;
+                        buffer[i + offset] *= (samplePos - fadeInStart) / (float)fadeInSamples;
                     }
                 }
 
                 if (fadeOutSamples > 0) {
                     if (samplePos >= fadeOutStart && samplePos < (fadeOutStart + fadeOutSamples)) {
-                        buffer[i] *= (1 - ((samplePos - fadeOutStart) / (float)fadeOutSamples));
+                        buffer[i + offset] *= (1 - ((samplePos - fadeOutStart) / (float)fadeOutSamples));
                     } else if (samplePos >= fadeOutStart + fadeOutSamples) {
-                        buffer[i] = 0;
+                        buffer[i + offset] = 0;
                     }
                 }
             }

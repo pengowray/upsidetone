@@ -12,6 +12,7 @@ using NAudio.Wave;
 using static System.Net.Mime.MediaTypeNames;
 using System.Windows.Navigation;
 using Voicemeeter;
+using static System.Windows.Forms.VisualStyles.VisualStyleElement.TrackBar;
 //using NWaves.Audio;
 
 namespace upSidetone.Sound {
@@ -141,11 +142,17 @@ namespace upSidetone.Sound {
         public void StraightKeyUp() {
             //PlayDitNext();
         }
-
-
         private void Next_SampleStarted(SwitchableDelayedSound sender) {
-            sender.SampleStarted -= Next_SampleStarted;
-            bool inPlaying = Playing.Contains(sender);
+
+            _ = Task.Run(() => {
+                sender.SampleStarted -= Next_SampleStarted;
+                bool inPlaying = Playing.Contains(sender);
+                if (inPlaying) {
+                    ThreeBeeps(null, LeverKind.Dits);
+                }
+
+            }
+            ); // .ContinueWith(LogResult));
 
             /*
             //TODO: lock first
@@ -164,9 +171,6 @@ namespace upSidetone.Sound {
             }
             */
 
-            if (inPlaying) {
-                ThreeBeeps(null, LeverKind.Dits);
-            }
         }
 
         private SwitchableDelayedSound MakeBeep(LeverKind lever, SwitchableDelayedSound? afterThis = null) {

@@ -157,7 +157,7 @@ namespace upSidetone.Sound {
                 }
                 if (options.HasFlag(BeepAttackDecay.O6_D_Smoothed) && lengthSamples.HasValue) {
                     
-                    fader.SetFadeOutSamples((int)(lengthSamples - ReleaseSeconds * WaveFormat.SampleRate), (int)(ReleaseSeconds * WaveFormat.SampleRate));
+                    fader.SetFadeOutSamples((int)(lengthSamples - (ReleaseSeconds * WaveFormat.SampleRate)), (int)(ReleaseSeconds * WaveFormat.SampleRate));
                 }
 
                 return fader;

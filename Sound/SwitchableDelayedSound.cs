@@ -117,7 +117,22 @@ namespace upSidetone.Sound {
             if (choice != null && (choice.WaveFormat.SampleRate != WaveFormat.SampleRate || choice.WaveFormat.Channels != WaveFormat.Channels)) {
                 throw new ArgumentException("WaveFormat mismatched. Can't change it I guess.");
             }
-            Chosen = choice;
+
+            if (choice is SwitchableDelayedSound swChoice) {
+                //throw new ArgumentException("Too meta for me.");
+                Chosen = swChoice.Chosen;
+                //StartAt = swChoice.StartAt; // keep same
+                //SamplesCursor = swChoice.SamplesCursor; // keep same
+                DurationSamples = swChoice.DurationSamples;
+                Lever = swChoice.Lever;
+                Next = swChoice.Next;
+                WaveFormat = swChoice.WaveFormat;
+                // etc?
+
+            } else {
+                Chosen = choice;
+            }
+
             return true;
         }
     }

@@ -2,7 +2,10 @@
 using NAudio.Wave.SampleProviders;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
+using System.Diagnostics;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms.VisualStyles;
@@ -13,7 +16,7 @@ namespace upSidetone.Sound {
     public enum VirtualLever {
         None,
         Left,
-        Right, 
+        Right,
         // closeCircuit,
         // straight key only (or none if in another mode)
     }
@@ -55,7 +58,7 @@ namespace upSidetone.Sound {
 
     // use this just for tracking which levers are down per source (todo)
 
-    public delegate void LeverEvent(Levers levers, LeverKind lever);
+    public delegate void LeverEvent(Levers levers, LeverKind lever, LeverKind require, LeverKind[] fill);
     public delegate void LeverDoublePressed(Levers levers, LeverKind lever, bool doublePressed, bool priorityIncreased);
 
     public class Levers {
@@ -78,8 +81,6 @@ namespace upSidetone.Sound {
         public event LeverEvent? LeverDown;
         public event LeverEvent? LeverUp;
         public event LeverDoublePressed? LeverDoubled;
-
-
 
         public IEnumerable<LeverKind> GetLeversDown() {
             return Down.AsEnumerable();
@@ -128,6 +129,7 @@ namespace upSidetone.Sound {
         }
 
 
+
         public void PushLeverDown(VirtualLever vlever) {
             var lever = LeverFreomVirtual(vlever);
             PushLeverDown(lever);
@@ -140,14 +142,13 @@ namespace upSidetone.Sound {
 
         public void PushLeverDown(LeverKind lever) {
             if (lever == LeverKind.None) {
-                //TODO: or just ignore?
-                throw new ArgumentException("No lever specified");
-                //return;
+                //TODO: throw or just ignore?
+                //throw new ArgumentException("No lever specified");
+                return;
             }
 
             lock (Down) {
                 bool doublePressed = false;
-                bool priorityIncreased = false;
                 if (Down.Contains(lever)) {
                     if (IgnoreDoublePresses) {
                         return;
@@ -155,37 +156,120 @@ namespace upSidetone.Sound {
                     doublePressed = true;
                     if (Down.LastOrDefault() == lever) {
                         // already pressed previously, and was last lever pressed
-                        LeverDoubled?.Invoke(this, lever, doublePressed, priorityIncreased);
+                        LeverDoubled?.Invoke(this, lever, doublePressed, priorityIncreased: false);
                         return;
                     } else {
                         // already pressed down, but another lever was pressed more recently
                         Down.Remove(lever);
                         Down.Add(lever);
-                        priorityIncreased = true;
                         // in case there's a time this actually matters, fire an event.
-                        LeverDoubled?.Invoke(this, lever, doublePressed, priorityIncreased);
+                        LeverDoubled?.Invoke(this, lever, doublePressed, priorityIncreased: true);
                         return;
                     }
                 }
+
+                // defaults
+                //LeverKind[] require = new LeverKind[] { lever }; // TODO: if there's a case where we need to add more than one then change this back to array or IEnumerable
+                LeverKind require = lever;
+                LeverKind[] fill = null;
+                if (lever != LeverKind.PoliteStraight && lever != LeverKind.Straight) fill = RepeatFill(lever);
+
+                if (Mode == KeyerMode.BugStyle) {
+                    if (lever == LeverKind.PoliteStraight && Down.Contains(LeverKind.Dits)) {
+                        fill = null;
+                    } else if (lever == LeverKind.Dits && Down.Contains(LeverKind.PoliteStraight)) {
+                        fill = RepeatFill(LeverKind.Dits);
+                    }
+                } else {
+                    // Mode == KeyerMode.IambicA
+                    if (lever == LeverKind.Dahs && Down.Contains(LeverKind.Dits)) {
+                        fill = RepeatFill(LeverKind.Dits, LeverKind.Dahs);
+                        //Debug.WriteLine($"dah dit dah...: {lever} " + String.Join(" ", fill.Take(4))); 
+                    } else if (lever == LeverKind.Dits && Down.Contains(LeverKind.Dahs)) {
+                        fill = RepeatFill(LeverKind.Dahs, LeverKind.Dits);
+                        //Debug.WriteLine($"dit dah dit...: {lever} " + String.Join(" ", fill.Take(4)));
+                    }
+                }
+
                 Down.Add(lever);
-                LeverDown?.Invoke(this, lever);
+                LeverDown?.Invoke(this, lever, lever, fill);
             }
         }
 
+        private LeverKind[] RepeatFill(params LeverKind[] fillPattern) {
+            return fillPattern;
+        }
+
+        private IEnumerable<LeverKind> RepeatFill_Old(params LeverKind[] fillPattern) {
+            while (true) {
+                foreach (var l in fillPattern) {
+                    yield return l;
+                }
+            }
+        }
+
+        private IEnumerable<LeverKind> RepeatFill_Old(IEnumerable<LeverKind> fillPattern) {
+            while (true) {
+                foreach (var l in fillPattern) {
+                    yield return l;
+                }
+            }
+        }
+
+        
         private void ReleaseLever(LeverKind lever) {
             if (lever == LeverKind.None) {
-                //TODO: or just ignore?
-                throw new ArgumentException("No lever specified");
-                //return;
+                //TODO: throw or just ignore?
+                //throw new ArgumentException("No lever specified");
+                return;
             }
 
             lock (Down) {
                 if (Down.Contains(lever)) {
                     Down.Remove(lever);
+
+                    if (Mode == KeyerMode.IambicA) {
+                        if (lever == LeverKind.Dits && Down.Contains(LeverKind.Dahs)) {
+                            LeverUp?.Invoke(this, lever, LeverKind.Dahs, RepeatFill(LeverKind.Dahs));
+                            return;
+                        } else if (lever == LeverKind.Dahs && Down.Contains(LeverKind.Dits)) {
+                            LeverUp?.Invoke(this, lever, LeverKind.Dits, RepeatFill(LeverKind.Dits));
+                            return;
+                        }
+                    } else if (Mode == KeyerMode.BugStyle) {
+                        if (lever == LeverKind.Dits && Down.Contains(LeverKind.PoliteStraight)) {
+                            LeverUp?.Invoke(this, lever, LeverKind.PoliteStraight, null);
+                            return;
+                        } else if (lever == LeverKind.PoliteStraight && Down.Contains(LeverKind.Dits)) {
+                            LeverUp?.Invoke(this, lever, LeverKind.Dits, RepeatFill(LeverKind.Dits));
+                            return;
+                        }
+                    }
                 }
+
             }
-            LeverUp?.Invoke(this, lever);
+            LeverUp?.Invoke(this, lever, LeverKind.None, null);
+
         }
 
+
+        public void ReleaseAll() {
+            if (!Down.Any()) {
+                //TODO: amaybe invoke anyway?
+                return;
+            }
+
+            if (Down.Count == 1) {
+                var release = Down.FirstOrDefault();
+                Down.Clear();
+                LeverUp?.Invoke(this, release, LeverKind.None, null);
+                return;
+            }
+
+            Down.Clear();
+            var which = LeverKind.None; // really should be "all"
+            LeverUp?.Invoke(this, which, LeverKind.None, null);
+
+        }
     }
 }

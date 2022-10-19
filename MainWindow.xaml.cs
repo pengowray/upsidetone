@@ -73,10 +73,9 @@ namespace upSidetone {
             MidiSelect.SelectedIndex = 0;
 
             KeyerModeSelect.Items.Add("Straight key");
-            KeyerModeSelect.Items.Add("Bug");
-            KeyerModeSelect.SelectedIndex = 1;
-
-
+            KeyerModeSelect.Items.Add("Iambic A");
+            KeyerModeSelect.Items.Add("Bug style");
+            KeyerModeSelect.SelectedIndex = 1; // iambic A
         }
 
         private ToneMaker GetOrCreateSounder() {
@@ -156,7 +155,7 @@ namespace upSidetone {
         private void Button_MouseUp(object sender, MouseButtonEventArgs e) {
             if (e.LeftButton == MouseButtonState.Released) {
                 Levers?.ReleaseLever(VirtualLever.Left);
-            } 
+            }
 
             if (e.RightButton == MouseButtonState.Released) {
                 Levers?.ReleaseLever(VirtualLever.Right);
@@ -285,8 +284,7 @@ namespace upSidetone {
 
         public void RefreshPianoDisplay() {
             // run on main thread (if called from midi's thread)
-            this.Dispatcher.Invoke(() =>
-            {
+            this.Dispatcher.Invoke(() => {
                 MidiPianoText.Text = MidiInput?.GetDownNotes() ?? "";
             });
         }
@@ -306,5 +304,16 @@ namespace upSidetone {
             }
         }
 
+        private void KeyerModeSelect_SelectionChanged(object sender, SelectionChangedEventArgs e) {
+            Levers.ReleaseAll();
+
+            if (KeyerModeSelect.SelectedIndex == 0) {
+                Levers.Mode = KeyerMode.StraightKey;
+            } else if (KeyerModeSelect.SelectedIndex == 1) {
+                Levers.Mode = KeyerMode.IambicA;
+            } else if (KeyerModeSelect.SelectedIndex == 2) {
+                Levers.Mode = KeyerMode.BugStyle;
+            }
+        }
     }
 }

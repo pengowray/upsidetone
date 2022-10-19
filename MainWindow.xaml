@@ -46,7 +46,7 @@
         </TextBox>
         <Button Name="MouseListRefresh" Content="Refresh" HorizontalAlignment="Left" Height="30" Margin="325,299,0,0" VerticalAlignment="Top" Width="60"/>
         <Label Content="Keyer mode" HorizontalAlignment="Left" Height="30" Margin="25,356,0,0" VerticalAlignment="Top" Width="245"/>
-        <ComboBox Name="KeyerModeSelect" HorizontalAlignment="Left" Margin="25,386,0,0" VerticalAlignment="Top" Width="360" Height="33" />
+        <ComboBox Name="KeyerModeSelect" HorizontalAlignment="Left" Margin="25,386,0,0" VerticalAlignment="Top" Width="360" Height="33" SelectionChanged="KeyerModeSelect_SelectionChanged" />
         <TextBox Name ="KeyerPianoText" Height="30" Margin="25,424,415,0" VerticalAlignment="Top">
             <TextBox.Style>
                 <Style TargetType="{x:Type TextBox}">

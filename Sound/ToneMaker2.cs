@@ -13,6 +13,7 @@ using NAudio.Wave.SampleProviders;
 using NAudio.Wave;
 using static System.Net.Mime.MediaTypeNames;
 using System.Windows.Navigation;
+using System.Windows.Media.Animation;
 //using Voicemeeter;
 
 //using NWaves.Audio;
@@ -292,7 +293,7 @@ namespace upSidetone.Sound {
             SwitchableDelayedSound sound;
             if (actuallyReplace) {
                 sound = afterThis;
-                sound.SetChoice(sound);
+                sound.SetChoice(beep);
                 afterThis = null;
             } else {
                 sound = new SwitchableDelayedSound(beep);
@@ -309,7 +310,12 @@ namespace upSidetone.Sound {
 
             if (afterThis != null) { 
                 // wont enter here if actuallyReplace == true (because afterThis is nulled above)
-
+                
+                if (sound.DurationSamples == 0) {
+                    // crash rather than do wrong (for debuging)
+                    throw new ArgumentException("Can't start after when durationless");
+                    //TODO: fade out and play after
+                }
                 sound.StartAt = afterThis.StartAt + afterThis.DurationSamples;
 
                 if (afterThis.Next == null) {

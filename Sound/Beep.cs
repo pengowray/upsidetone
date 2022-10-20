@@ -100,20 +100,18 @@ namespace upSidetone.Sound {
 
     //TODO: rename 
     public class Beep {
-        WaveFormat WaveFormat;
-        DateTime EndTime;
-        DateTime QueueNextBefore;
-        SineGenerator? Sine;
-
+        public WaveFormat WaveFormat;
+        
         // todo: package up options into audio settings or something
-        float Phase;
+
         //bool ReleaseQuantized; // end after crossing zero
         //bool OscillatorReset; // start at 0 degrees, sine 0; 
-        BeepAttackDecay AttackDecayOptions = BeepAttackDecay.Preset_Smooth;
+        //BeepAttackDecay AttackDecayOptions = BeepAttackDecay.Preset_Smooth;
         float AttackSeconds = 0.015f;
         float ReleaseSeconds = 0.015f;
 
-        float Frequency = 550;
+        public double Frequency = 550;
+        public double Gain = 0.5;
 
         public Beep(WaveFormat format) {
             WaveFormat = format;
@@ -135,11 +133,15 @@ namespace upSidetone.Sound {
             if (options == BeepAttackDecay.O1_ResetOscillator) {
                 sine = new SineGenerator(WaveFormat.SampleRate, WaveFormat.Channels, 0, sampleLength: lengthSamples, startPhase: phase) {
                     Frequency = Frequency,
+                    Gain = Gain
                 };
+                sine.Gain = Gain;
             } else {
                 sine = new SineGenerator(WaveFormat.SampleRate, WaveFormat.Channels, startSamples, sampleLength: lengthSamples, startPhase: phase) {
                     Frequency = Frequency,
+                    Gain = Gain
                 };
+                sine.Gain = Gain;
             }
 
             if (lengthSamples.HasValue) {

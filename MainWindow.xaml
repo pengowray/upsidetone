@@ -8,7 +8,7 @@
         Title="UpSidetone by Pengo" Height="610" Width="800">
     <Grid PreviewKeyDown="Grid_PreviewKeyDown" PreviewKeyUp="Grid_PreviewKeyUp" LostFocus="Grid_LostFocus">
         <ComboBox Name="AudioOutputSelect" HorizontalAlignment="Left" Margin="25,45,0,0" VerticalAlignment="Top" Width="360" RenderTransformOrigin="-0.042,0.457" Height="32" SelectionChanged="AudioOutputSelect_SelectionChanged"/>
-        <Button Content="Key" HorizontalAlignment="Left" Height="110" Margin="25,464,0,0" VerticalAlignment="Top" Width="360" Click="Button_Click" PreviewMouseLeftButtonDown="Button_MouseDown" PreviewMouseLeftButtonUp="Button_MouseUp" MouseDown="Button_MouseDown" MouseUp="Button_MouseUp" MouseLeave="Button_MouseLeave" MouseEnter="Button_MouseEnter"/>
+        <Button Content="Key" HorizontalAlignment="Left" Height="70" Margin="25,459,0,0" VerticalAlignment="Top" Width="360" Click="Button_Click" PreviewMouseLeftButtonDown="Button_MouseDown" PreviewMouseLeftButtonUp="Button_MouseUp" MouseDown="Button_MouseDown" MouseUp="Button_MouseUp" MouseLeave="Button_MouseLeave" MouseEnter="Button_MouseEnter"/>
         <Label Content="Audio output device" HorizontalAlignment="Left" Height="30" Margin="25,10,0,0" VerticalAlignment="Top" Width="245"/>
         <TextBox Name ="DeviceInfoText" Height="72" Margin="25,82,500,0" VerticalAlignment="Top">
             <TextBox.Style>
@@ -32,7 +32,7 @@
         </TextBox>
         <Button Name="AudioOutputOptionsButton" Content="Options" HorizontalAlignment="Left" Height="30" Margin="325,82,0,0" VerticalAlignment="Top" Width="60" Click="AudioOutOptions_Button_Click"/>
         <Button Name="AsioOutputOptionsButton" Content="ASIO" HorizontalAlignment="Left" Height="30" Margin="325,117,0,0" VerticalAlignment="Top" Width="60" Click="AsioOutputOptionsButton_Click" Grid.RowSpan="2"/>
-        <TextBox Name="DebugText" HorizontalAlignment="Left" Height="399" Margin="400,10,0,0" TextWrapping="Wrap" Text="Debug log" VerticalAlignment="Top" Width="390" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto" Grid.RowSpan="2"/>
+        <TextBox Name="DebugText" Visibility="Hidden"  HorizontalAlignment="Left" Height="211" Margin="400,299,0,0" TextWrapping="Wrap" Text="Debug log" VerticalAlignment="Top" Width="370" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto"/>
         <Label Content="Mouse button background sounds:" HorizontalAlignment="Left" Height="30" Margin="25,266,0,0" VerticalAlignment="Top" Width="245"/>
         <ComboBox Name="MouseSelect" HorizontalAlignment="Left" Margin="25,296,0,0" VerticalAlignment="Top" Width="275" Height="33" SelectionChanged="MouseSelect_SelectionChanged" />
         <TextBox Name ="MousePianoText" Height="30" Margin="25,334,415,0" VerticalAlignment="Top">
@@ -56,6 +56,15 @@
                 </Style>
             </TextBox.Style>
         </TextBox>
+        <Label Content="Volume:" HorizontalAlignment="Left" Margin="425,45,0,0" VerticalAlignment="Top" Height="32" Width="80"/>
+        <TextBox Name="Volume" HorizontalAlignment="Left" Height="32" Margin="510,45,0,0" TextWrapping="Wrap" Text="TextBox" VerticalAlignment="Top" Width="90" TextChanged="Volume_TextChanged"/>
+        <Label Content="Tone:" HorizontalAlignment="Left" Margin="425,97,0,0" VerticalAlignment="Top" Height="32" Width="80"/>
+        <TextBox Name="Frequency" HorizontalAlignment="Left" Height="32" Margin="510,97,0,0" TextWrapping="Wrap" Text="TextBox" VerticalAlignment="Top" Width="90" TextChanged="Frequency_TextChanged"/>
+        <Label Content="WPM:" HorizontalAlignment="Left" Margin="425,154,0,0" VerticalAlignment="Top" Height="32" Width="80"/>
+        <TextBox Name="WPM" HorizontalAlignment="Left" Height="32" Margin="510,154,0,0" TextWrapping="Wrap" Text="TextBox" VerticalAlignment="Top" Width="90" TextChanged="WPM_TextChanged"/>
+        <CheckBox Name="Flipped" Content="Flip left/right" HorizontalAlignment="Left" Height="20" Margin="510,210,0,0" VerticalAlignment="Top" Width="135" Checked="Flipped_Checked" Unchecked="Flipped_Checked"/>
+        <Label Content="Inputs:" HorizontalAlignment="Left" Margin="425,203,0,0" VerticalAlignment="Top" Height="32" Width="80"/>
+        <Label Content="Hz" HorizontalAlignment="Left" Margin="605,97,0,0" VerticalAlignment="Top" Height="32" Width="80"/>
 
     </Grid>
 </Window>

@@ -29,7 +29,7 @@ namespace upSidetone {
         int Latency = 90;
 
         AudioOut AudioOut;
-        ToneMaker Sounder;
+        ToneMaker SoundGen;
         Levers Levers;
         MidiInput MidiInput;
         KeyboardInputWPF KeyboardInput;
@@ -76,17 +76,25 @@ namespace upSidetone {
             KeyerModeSelect.Items.Add("Iambic A");
             KeyerModeSelect.Items.Add("Bug style");
             KeyerModeSelect.SelectedIndex = 1; // iambic A
+
+            Volume.Text = "50";
+            Frequency.Text = "550";
+            WPM.Text = "18";
+            Flipped.IsChecked = false;
+
+            SoundGen?.SetGain(0.5);
+
         }
 
         private ToneMaker GetOrCreateSounder() {
-            if (Sounder == null) {
+            if (SoundGen == null) {
                 string? selected = AudioOutputSelect.SelectedValue as string; // ok if null
 
                 AudioOut = new AudioOut();
                 AudioOut.Enable(selected, Latency);
-                Sounder = new ToneMaker(AudioOut);
-                Sounder.Enable();
-                Sounder.ListenToLevers(Levers);
+                SoundGen = new ToneMaker(AudioOut);
+                SoundGen.Enable();
+                SoundGen.ListenToLevers(Levers);
 
                 //MidiInput?.SetLevers(Sounder);
                 //KeyboardInput?.SetSounder(Sounder);
@@ -106,7 +114,7 @@ namespace upSidetone {
                 }
                 //AudioOut.DeviceInfoDebug();
             }
-            return Sounder;
+            return SoundGen;
         }
 
         private void MidiSelect_SelectionChanged(object sender, SelectionChangedEventArgs e) {
@@ -121,9 +129,9 @@ namespace upSidetone {
             DebugOut("changing audio to: " + selected);
 
             AudioOut?.Dispose();
-            Sounder?.Dispose();
+            SoundGen?.Dispose();
             AudioOut = null;
-            Sounder = null;
+            SoundGen = null;
             GetOrCreateSounder(); // create a new sounder immediately so Midi can talk to it
 
             //TODO: make a sounder wrapper/indirection, for midi etc to keep pressing buttons on even when audio device changed?
@@ -209,7 +217,7 @@ namespace upSidetone {
             if (!disposedValue) {
                 if (disposing) {
                     // dispose managed state (managed objects)
-                    Sounder?.Dispose();
+                    SoundGen?.Dispose();
                     MidiInput?.Dispose();
                     MorseMouses?.Dispose();
                     //Levers?.Dispose(); // TODO
@@ -219,7 +227,7 @@ namespace upSidetone {
                 AudioOut?.Dispose(); // really needs to be disposed (in case might hold onto ASIO)
 
                 // set large fields to null
-                Sounder = null;
+                SoundGen = null;
                 AudioOut = null;
                 MidiInput = null;
                 Me = null;
@@ -315,5 +323,40 @@ namespace upSidetone {
                 Levers.Mode = KeyerMode.BugStyle;
             }
         }
+
+        private void Volume_TextChanged(object sender, TextChangedEventArgs e) {
+            if (Volume != null && double.TryParse(Volume.Text, out double result)) {
+                double vol = result / 100.0;
+                if (vol >= 0 && vol <= 1) {
+                    // "Setting volume not supported on DirectSoundOut, adjust the volume on your WaveProvider instead"
+                    //if (AudioOut?.OutDevice != null) AudioOut.OutDevice.Volume = vol;
+                    var success = SoundGen?.SetGain(vol) ?? false;
+                }
+            }
+        }
+
+        private void Frequency_TextChanged(object sender, TextChangedEventArgs e) {
+            if (Frequency != null && double.TryParse(Frequency.Text, out double result)) {
+                var success = SoundGen?.SetFreq(result) ?? false;
+            }
+
+        }
+        private void WPM_TextChanged(object sender, TextChangedEventArgs e) {
+            if (WPM != null && double.TryParse(WPM.Text, out double result)) {
+                var success = SoundGen?.SetWPM(result) ?? false;
+            }
+            
+        }
+
+        private void Flipped_Checked(object sender, RoutedEventArgs e) {
+            bool? flipped = Flipped.IsChecked;
+            if (Levers == null) return;
+            if (flipped.HasValue && flipped.Value) {
+                Levers.SwapLeftRight = true;
+            } else {
+                Levers.SwapLeftRight = false;
+            }
+        }
+
     }
 }

@@ -25,8 +25,56 @@ namespace upSidetone.Sound {
     public class ToneMaker : IDisposable {
 
         //TODO: per lever
-        const double wpm = 12.0;
-        double ditSeconds = 60.0 / (50.0 * wpm);
+        private double Wpm;
+        private double DitSeconds;
+
+        private double Freq;
+        private double Gain; // Volume
+
+        public bool SetWPM(double wpm) {
+            // returns true on success
+
+            if (wpm < 1 || wpm > 200) {
+                // throw error?
+                return false;
+            }
+
+            Wpm = wpm;
+            DitSeconds = 60.0 / (50.0 * wpm);
+            return true;
+        }
+
+        public bool SetFreq(double freq) {
+            // returns true on success
+
+            if (freq < 2 || freq > 20000) {
+                // throw error?
+                return false;
+            }
+
+            Freq = freq;
+
+            if (Beep != null) 
+                Beep.Frequency = freq;
+
+            return true;
+        }
+
+        public bool SetGain(double gain) {
+            // returns true on success
+
+            if (gain < 0 || gain > 1) {
+                // throw error?
+                return false;
+            }
+
+            Gain = gain;
+
+            if (Beep != null)
+                Beep.Gain = gain;
+
+            return true;
+        }
 
         //SwitchableDelayedSound Playing;
         //LeverKind PlayingLever;
@@ -57,12 +105,17 @@ namespace upSidetone.Sound {
         public WaveFormat WaveFormat => WaveFormat.CreateIeeeFloatWaveFormat(ParentWaveFormat.SampleRate, 1);
 
         public ToneMaker(AudioOut audioOut) {
+            
+            SetWPM(18.0); // default wpm
+            SetFreq(550);
+
             AudioOut = audioOut;
             //ScoreProvider = new MixingSampleProvider(ParentWaveFormat);
             //ScoreProvider = new ScoreProvider(ParentWaveFormat);
             ScoreProvider = new ScoreProvider(WaveFormat);
             ScoreProvider.ReadFully = true;
             Beep = new Beep(WaveFormat);
+            Beep.Frequency = Freq;
         }
 
         public void Enable() {
@@ -274,8 +327,8 @@ namespace upSidetone.Sound {
             if (lever == LeverKind.Dits) ditLen = 1;
             if (lever == LeverKind.Dahs) ditLen = 3;
 
-            long ditLenSamples = (long)(ditSeconds * WaveFormat.SampleRate);
-            long? beepSamples = ditLen.HasValue ? (long)(ditLen * ditSeconds * WaveFormat.SampleRate) : null;
+            long ditLenSamples = (long)(DitSeconds * WaveFormat.SampleRate);
+            long? beepSamples = ditLen.HasValue ? (long)(ditLen * DitSeconds * WaveFormat.SampleRate) : null;
 
             //long whenSamples = (long)(ditSeconds * whenInDits * AudioOut.Format.SampleRate);
             //long currentPos = ScoreProvider.CurrentSamplePos; // used here for calculating waveform phase; not for positioning the note
@@ -311,7 +364,7 @@ namespace upSidetone.Sound {
             if (afterThis != null) { 
                 // wont enter here if actuallyReplace == true (because afterThis is nulled above)
                 
-                if (sound.DurationSamples == 0) {
+                if (sound.DurationSamples == 0) {  
                     // crash rather than do wrong (for debuging)
                     throw new ArgumentException("Can't start after when durationless");
                     //TODO: fade out and play after

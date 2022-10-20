@@ -180,6 +180,9 @@ namespace upSidetone.Sound {
                     } else if (lever == LeverKind.Dit && Down.Contains(LeverKind.PoliteStraight)) {
                         fill = RepeatFill(LeverKind.Dit);
                     }
+                } else if (Mode == KeyerMode.Ultimatic) {
+                    // defaults are fine?
+
                 } else {
                     // Mode == KeyerMode.IambicA
                     if (lever == LeverKind.Dah && Down.Contains(LeverKind.Dit)) {
@@ -230,10 +233,22 @@ namespace upSidetone.Sound {
 
                     if (Mode == KeyerMode.IambicA) {
                         if (lever == LeverKind.Dit && Down.Contains(LeverKind.Dah)) {
-                            LeverUp?.Invoke(this, lever, LeverKind.Dah, RepeatFill(LeverKind.Dah));
+                            LeverKind require = (Down.Last() != LeverKind.Dit) ? LeverKind.None : LeverKind.Dah;
+                            LeverUp?.Invoke(this, lever, require, RepeatFill(LeverKind.Dah));
                             return;
                         } else if (lever == LeverKind.Dah && Down.Contains(LeverKind.Dit)) {
-                            LeverUp?.Invoke(this, lever, LeverKind.Dit, RepeatFill(LeverKind.Dit));
+                            LeverKind require = (Down.Last() != LeverKind.Dit) ? LeverKind.None : LeverKind.Dit;
+                            LeverUp?.Invoke(this, lever, require, RepeatFill(LeverKind.Dit));
+                            return;
+                        }
+                    } else if (Mode == KeyerMode.Ultimatic) {
+                        if (lever == LeverKind.Dit && Down.Contains(LeverKind.Dah)) {
+                            LeverKind require = (Down.Last() != LeverKind.Dit) ? LeverKind.None : LeverKind.Dah;
+                            LeverUp?.Invoke(this, lever, require, RepeatFill(LeverKind.Dah));
+                            return;
+                        } else if (lever == LeverKind.Dah && Down.Contains(LeverKind.Dit)) {
+                            LeverKind require = (Down.Last() != LeverKind.Dit) ? LeverKind.None : LeverKind.Dit;
+                            LeverUp?.Invoke(this, lever, require, RepeatFill(LeverKind.Dit));
                             return;
                         }
                     } else if (Mode == KeyerMode.BugStyle) {

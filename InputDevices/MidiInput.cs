@@ -78,8 +78,8 @@ namespace upSidetone.InputDevices
                 //remove old device
                 Midi.MessageReceived -= MidiIn_MessageReceived;
                 Midi.ErrorReceived -= MidiIn_ErrorReceived;
-                Midi.Stop();
-                Midi.Close();
+                Midi?.Stop();
+                Midi?.Close();
             }
 
             if (selectedDeviceIndex == -1) // NONE_LABEL ("none")

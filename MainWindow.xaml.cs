@@ -74,6 +74,7 @@ namespace upSidetone {
 
             KeyerModeSelect.Items.Add("Straight key");
             KeyerModeSelect.Items.Add("Iambic A");
+            KeyerModeSelect.Items.Add("Ultimatic");
             KeyerModeSelect.Items.Add("Bug style");
             KeyerModeSelect.SelectedIndex = 1; // iambic A
 
@@ -324,6 +325,8 @@ namespace upSidetone {
             } else if (KeyerModeSelect.SelectedIndex == 1) {
                 Levers.Mode = KeyerMode.IambicA;
             } else if (KeyerModeSelect.SelectedIndex == 2) {
+                Levers.Mode = KeyerMode.Ultimatic;
+            } else if (KeyerModeSelect.SelectedIndex == 3) {
                 Levers.Mode = KeyerMode.BugStyle;
             }
         }

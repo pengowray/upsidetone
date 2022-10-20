@@ -90,8 +90,12 @@ namespace upSidetone {
             if (SoundGen == null) {
                 string? selected = AudioOutputSelect.SelectedValue as string; // ok if null
 
+                AudioOut?.Dispose();
                 AudioOut = new AudioOut();
                 AudioOut.Enable(selected, Latency);
+
+                SoundGen?.StopListeningToLevers(Levers); // remove old
+                SoundGen?.Dispose();
                 SoundGen = new ToneMaker(AudioOut);
                 SoundGen.Enable();
                 SoundGen.ListenToLevers(Levers);

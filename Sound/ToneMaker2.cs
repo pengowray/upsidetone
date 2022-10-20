@@ -129,6 +129,12 @@ namespace upSidetone.Sound {
             levers.LeverDoubled += Levers_LeverDoubled;
         }
 
+        public void StopListeningToLevers(Levers levers) {
+            levers.LeverDown -= Levers_LeverDown;
+            levers.LeverUp -= Levers_LeverUp;
+            levers.LeverDoubled -= Levers_LeverDoubled;
+        }
+
         private void Levers_LeverDoubled(Levers levers, LeverKind lever, bool doublePressed, bool priorityIncreased) {
             // todo
         }
@@ -159,7 +165,7 @@ namespace upSidetone.Sound {
 
             //ThreeBeeps(levers, lever);
             RefillBeeps();
-            Debug.WriteLine("queu1: " + String.Join(" ", Playing.Select(p => p.Lever)));
+            //Debug.WriteLine("queu1: " + String.Join(" ", Playing.Select(p => p.Lever)));
         }
 
 
@@ -278,38 +284,27 @@ namespace upSidetone.Sound {
             var nextBeep = GetNextUpAndDeleteRest();
             var nextLever = GetNextLever();
 
-            if (nextLever.Item1 == LeverKind.None) {
-                AddPlaceholder();
-                return;
-            }
+            // "optimization"
+            //if (nextLever.Item1 == LeverKind.None) {
+            //    AddPlaceholder();
+            //    return;
+            //}
 
-            if (nextBeep != null) { //  && !nextBeep.IsLockedIn
-                var beep = MakeBeep(nextLever.Item1, nextBeep, replaceIfPossible: true, required: nextLever.Item2);
+            // always do one, even if none
+            var sound = MakeBeep(nextLever.Item1, afterThis: nextBeep, replaceIfPossible: true, required: nextLever.Item2);
 
-                var afterNextLever = GetNextLever();
-                if (afterNextLever.Item1 != LeverKind.None) {
-                    var afterNextBeep = MakeBeep(afterNextLever.Item1, beep, required: afterNextLever.Item2);
-
-                }
-                AddPlaceholder();
-                return;
-
-            } else {
-
-                var sound = MakeBeep(nextLever.Item1, required: nextLever.Item2);
-
-                var afterNextLever = GetNextLever();
-                if (afterNextLever.Item1 != LeverKind.None) {
-                    var afterNextBeep = MakeBeep(afterNextLever.Item1, sound, required: afterNextLever.Item2);
-
-                    var oneMore = GetNextLever();
-                    if (oneMore.Item1 != LeverKind.None) {
-                        var oneMoreBeep = MakeBeep(oneMore.Item1, afterNextBeep, required: oneMore.Item2);
-                    }
+            var prev = sound;
+            for (int i = 0; i < 3; i++) {
+                if (prev.Chosen == null) {
+                    break;
                 }
 
-                AddPlaceholder();
+                var afterNextLever = GetNextLever();
+                var newSound = MakeBeep(afterNextLever.Item1, afterThis: prev, required: afterNextLever.Item2);
+                prev = newSound;
             }
+
+            AddPlaceholder();
         }
 
         private SwitchableDelayedSound AddPlaceholder() {

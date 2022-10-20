@@ -31,13 +31,18 @@ namespace upSidetone.Sound {
 
 
 
-        public long DurationSamples { set; get; } // May include pause after sound; Info not internally used by this class.
+        public long? DurationSamples { set; get; } // May include pause after sound; only use internally for setting IsDone; null for unknown
         public LeverKind Lever { set; get; } // info not needed specifically by the class, but handy for reference
         public SwitchableDelayedSound Next { get; set; } // not used internally
+        public bool RequiredPlay { get; set; } // not used internally in this class. If true: don't delete/ignore/replace this sound when lever is released; May be ignored if other sounds before this one with RequiredPlay=false
 
 
+        public bool IsDoneSpecial { get; private set; } // unreliable
+        public bool IsDoneReading { get; private set; } // done reading
+        public bool IsDone(long SampleCursor) {
+            return SampleCursor > StartAt + (DurationSamples ?? 0);
+        }
 
-        public bool IsDone { get; private set; }
         public bool IsLockedIn { get; private set; }
 
         public ISampleProvider? Chosen { get; private set; }
@@ -49,11 +54,11 @@ namespace upSidetone.Sound {
         }
 
         public SwitchableDelayedSound(ISampleProvider initialChoice) {
-            if (initialChoice == null) {
-                throw new ArgumentNullException(nameof(initialChoice));
-            }
+            //if (initialChoice == null) {
+            //    throw new ArgumentNullException(nameof(initialChoice));
+            //}
             Chosen = initialChoice;
-            WaveFormat = initialChoice.WaveFormat;
+            WaveFormat = initialChoice?.WaveFormat;
         }
         int ISampleProvider.Read(float[] buffer, int offset, int count) {
             return Read(buffer, offset, count, null);
@@ -62,6 +67,11 @@ namespace upSidetone.Sound {
             if (!IsLockedIn) {
                 // use provided cursor if available; otherwise fallback to our own cursor (SamplesCursor)
                 long cur = cursor.HasValue ? cursor.Value : SamplesCursor;
+
+                if (DurationSamples.HasValue && (StartAt + DurationSamples) < (cur + count)) {
+                    // warning: doesn't really tell you whether it's actually played out yet though
+                    IsDoneSpecial = true;
+                }
 
                 if (StartAt > cur + count) { 
 
@@ -85,7 +95,7 @@ namespace upSidetone.Sound {
                             IsLockedIn = true;
                             var read1 = Chosen?.Read(buffer, i, count - i) ?? 0;
                             SamplesCursor += read1;  // no longer need to track Pos
-                            if (read1 == 0 || read1 < count - i) IsDone = true;
+                            if (read1 == 0 || read1 < count - i) IsDoneReading = true;
                             return i + read1;
                         } else {
                             buffer[offset + i] = 0;
@@ -103,12 +113,12 @@ namespace upSidetone.Sound {
             }
 
             var read = Chosen?.Read(buffer, offset, count) ?? 0;
-            if (read == 0 || read < count) IsDone = true;
+            if (read == 0 || read < count) IsDoneReading = true;
             SamplesCursor += read; // no longer need to track Pos
             return read;
         }
 
-        public bool SetChoice(ISampleProvider choice) {
+        public bool SetChoice(ISampleProvider? choice) {
             // returns true on success; false if you were too late
             if (IsLockedIn) {
                 return false; // too late

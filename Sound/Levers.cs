@@ -33,8 +33,8 @@ namespace upSidetone.Sound {
         None,
         Straight, // (indefinite) straight key (will extend other elements if pressed while they're going)
         PoliteStraight, // for BugStyle: will queue up and leave a pause between other elements
-        Dits,
-        Dahs,
+        Dit,
+        Dah,
 
         //TODO:
         //MuteFade, // cease immediately but allow fade out
@@ -107,7 +107,7 @@ namespace upSidetone.Sound {
 
                 case KeyerMode.BugStyle:
                     if (left) {
-                        return LeverKind.Dits;
+                        return LeverKind.Dit;
                     } else {
                         return LeverKind.PoliteStraight;
                     }
@@ -118,9 +118,9 @@ namespace upSidetone.Sound {
                 case KeyerMode.SqueezeMute:
                 case KeyerMode.Ultimatic:
                     if (left) {
-                        return LeverKind.Dits;
+                        return LeverKind.Dit;
                     } else {
-                        return LeverKind.Dahs;
+                        return LeverKind.Dah;
                     }
 
                 default:
@@ -175,18 +175,18 @@ namespace upSidetone.Sound {
                 if (lever != LeverKind.PoliteStraight && lever != LeverKind.Straight) fill = RepeatFill(lever);
 
                 if (Mode == KeyerMode.BugStyle) {
-                    if (lever == LeverKind.PoliteStraight && Down.Contains(LeverKind.Dits)) {
+                    if (lever == LeverKind.PoliteStraight && Down.Contains(LeverKind.Dit)) {
                         fill = null;
-                    } else if (lever == LeverKind.Dits && Down.Contains(LeverKind.PoliteStraight)) {
-                        fill = RepeatFill(LeverKind.Dits);
+                    } else if (lever == LeverKind.Dit && Down.Contains(LeverKind.PoliteStraight)) {
+                        fill = RepeatFill(LeverKind.Dit);
                     }
                 } else {
                     // Mode == KeyerMode.IambicA
-                    if (lever == LeverKind.Dahs && Down.Contains(LeverKind.Dits)) {
-                        fill = RepeatFill(LeverKind.Dits, LeverKind.Dahs);
+                    if (lever == LeverKind.Dah && Down.Contains(LeverKind.Dit)) {
+                        fill = RepeatFill(LeverKind.Dit, LeverKind.Dah);
                         //Debug.WriteLine($"dah dit dah...: {lever} " + String.Join(" ", fill.Take(4))); 
-                    } else if (lever == LeverKind.Dits && Down.Contains(LeverKind.Dahs)) {
-                        fill = RepeatFill(LeverKind.Dahs, LeverKind.Dits);
+                    } else if (lever == LeverKind.Dit && Down.Contains(LeverKind.Dah)) {
+                        fill = RepeatFill(LeverKind.Dah, LeverKind.Dit);
                         //Debug.WriteLine($"dit dah dit...: {lever} " + String.Join(" ", fill.Take(4)));
                     }
                 }
@@ -229,19 +229,19 @@ namespace upSidetone.Sound {
                     Down.Remove(lever);
 
                     if (Mode == KeyerMode.IambicA) {
-                        if (lever == LeverKind.Dits && Down.Contains(LeverKind.Dahs)) {
-                            LeverUp?.Invoke(this, lever, LeverKind.Dahs, RepeatFill(LeverKind.Dahs));
+                        if (lever == LeverKind.Dit && Down.Contains(LeverKind.Dah)) {
+                            LeverUp?.Invoke(this, lever, LeverKind.Dah, RepeatFill(LeverKind.Dah));
                             return;
-                        } else if (lever == LeverKind.Dahs && Down.Contains(LeverKind.Dits)) {
-                            LeverUp?.Invoke(this, lever, LeverKind.Dits, RepeatFill(LeverKind.Dits));
+                        } else if (lever == LeverKind.Dah && Down.Contains(LeverKind.Dit)) {
+                            LeverUp?.Invoke(this, lever, LeverKind.Dit, RepeatFill(LeverKind.Dit));
                             return;
                         }
                     } else if (Mode == KeyerMode.BugStyle) {
-                        if (lever == LeverKind.Dits && Down.Contains(LeverKind.PoliteStraight)) {
+                        if (lever == LeverKind.Dit && Down.Contains(LeverKind.PoliteStraight)) {
                             LeverUp?.Invoke(this, lever, LeverKind.PoliteStraight, null);
                             return;
-                        } else if (lever == LeverKind.PoliteStraight && Down.Contains(LeverKind.Dits)) {
-                            LeverUp?.Invoke(this, lever, LeverKind.Dits, RepeatFill(LeverKind.Dits));
+                        } else if (lever == LeverKind.PoliteStraight && Down.Contains(LeverKind.Dit)) {
+                            LeverUp?.Invoke(this, lever, LeverKind.Dit, RepeatFill(LeverKind.Dit));
                             return;
                         }
                     }

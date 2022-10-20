@@ -103,12 +103,12 @@ namespace upSidetone.Sound
             //ConcatenatingSampleProvider
             //EnvelopeGenerator
 
-            if (!force && Down.LastOrDefault() == LeverKind.Dits) {
+            if (!force && Down.LastOrDefault() == LeverKind.Dit) {
                 // already down
                 return;
             }
 
-            AddDownLever(LeverKind.Dits);
+            AddDownLever(LeverKind.Dit);
 
             if (true) {
 
@@ -156,7 +156,7 @@ namespace upSidetone.Sound
         private void DitDoneCheck(Object? info) {
             StraightAdsr = null;
             var last = Down.LastOrDefault();
-            if (last == LeverKind.Dits) {
+            if (last == LeverKind.Dit) {
                 // dit get still down
                 DoDitKeyDown(force: true);
             } else if (last == LeverKind.Straight){
@@ -172,7 +172,7 @@ namespace upSidetone.Sound
             var previousLast = Down.LastOrDefault();
             AddDownLever(LeverKind.Straight);
 
-            if (previousLast == LeverKind.Dits) {
+            if (previousLast == LeverKind.Dit) {
                 return; // wait until dit finished
 
             } else if (previousLast == LeverKind.Straight) {
@@ -215,7 +215,7 @@ namespace upSidetone.Sound
         }
 
         public void DitsKeyUp() {
-            RemoveDownLever(LeverKind.Dits);
+            RemoveDownLever(LeverKind.Dit);
         }
 
         protected virtual void Dispose(bool disposing) {

@@ -190,15 +190,15 @@ namespace upSidetone.Sound {
                 if ((sound.RequiredPlay || sound.IsLockedIn) && !IsDone(sound)) {
                     // maybe can put a sound after it
                     lastCanPutOneAfter = sound;
-                    newPlaying.Add(sound); // don't add again
+                    newPlaying.Add(sound); 
                     
-                } else if (!sound.IsLockedIn && firstCanReplace == null) {
+                } else if (!sound.RequiredPlay && !sound.IsLockedIn && firstCanReplace == null) {
                     // a better choice showed up after: not locked in (i.e. placeholder)
                     firstCanReplace = sound;
                     newPlaying.Add(sound);
 
                 } else {
-                    // delete
+                    // delete (unless in the middle of playing)
                     if (sound.IsLockedIn && !IsDone(sound)) {
                         newPlaying.Add(sound); 
                     } else {

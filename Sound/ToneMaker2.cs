@@ -15,6 +15,7 @@ using static System.Net.Mime.MediaTypeNames;
 using System.Windows.Navigation;
 using System.Windows.Media.Animation;
 using System.Windows.Forms;
+using System.Runtime.InteropServices;
 //using Voicemeeter;
 
 //using NWaves.Audio;
@@ -146,16 +147,32 @@ namespace upSidetone.Sound {
             //if bringing up active straight key...
 
             if (lever == LeverKind.Straight || lever == LeverKind.PoliteStraight) {
-                //TODO: bring up straight key
+                // bring up straight key
 
-                var toUp = Playing.Where(sound => !sound.IsLockedIn && sound.Lever == lever);
-                //toUp.Stop(); //TODO
+                _ = ReleaseStraightKey();
             }
 
             // the rest is the same as Levers_LeverDown()
-            Levers_LeverDown(levers, lever, require, fill);
+            if (require != LeverKind.None)
+                Required.Enqueue(require);
+            Fill = fill;
+            FillPos = 0;
+
+            RefillBeeps(aggressive: false);
         }
 
+        private SwitchableDelayedSound? ReleaseStraightKey() {
+            var toUp = Playing.FirstOrDefault(sound => sound.IsLockedIn && !sound.DurationSamples.HasValue); // && !IsDone(sound) && sound.Lever == LeverKind.Straight ....
+            toUp?.KeyReleased(ScoreProvider.SampleCursor);
+
+            // Release queued straight keys too (to prevent straight key starting with no immediate way to release it)
+            // doesn't work if ... && !sound.RequiredPlay
+            foreach (var notYetDown in Playing.Where(sound => !sound.IsLockedIn && !sound.DurationSamples.HasValue && sound.Chosen != null).ToArray()) {
+                Remove(notYetDown);
+            }
+
+            return toUp;
+        }
 
         private void Levers_LeverDown(Levers levers, LeverKind lever, LeverKind require, LeverKind[]? fill) {
             if (require != LeverKind.None) 
@@ -163,8 +180,7 @@ namespace upSidetone.Sound {
             Fill = fill;
             FillPos = 0;
 
-            //ThreeBeeps(levers, lever);
-            RefillBeeps();
+            RefillBeeps(aggressive: true);
             //Debug.WriteLine("queu1: " + String.Join(" ", Playing.Select(p => p.Lever)));
         }
 
@@ -175,7 +191,7 @@ namespace upSidetone.Sound {
             return Playing.LastOrDefault();
 
         }
-        private SwitchableDelayedSound? GetNextUpAndDeleteRest() {
+        private SwitchableDelayedSound? GetNextUpAndDeleteRest(bool aggressive = false) {
             // finds the next non-required, non-locked in Sound that can be replaced, or otherwise the best Sound to place a sound after.
 
             // returns in order of preference:
@@ -192,8 +208,14 @@ namespace upSidetone.Sound {
 
             List<SwitchableDelayedSound> newPlaying = new();
             int index = 0;
+            SwitchableDelayedSound? straightKey = aggressive ? ReleaseStraightKey() : null;
+
             foreach (var sound in Playing.ToArray()) {
-                if ((sound.RequiredPlay || sound.IsLockedIn) && !IsDone(sound)) {
+                if (straightKey != null && sound == straightKey) {
+                    newPlaying.Add(sound);
+                    lastCanPutOneAfter = sound;
+
+                } else if ((sound.RequiredPlay || sound.IsLockedIn) && !IsDone(sound)) {
                     // maybe can put a sound after it
                     lastCanPutOneAfter = sound;
                     newPlaying.Add(sound); 
@@ -234,6 +256,7 @@ namespace upSidetone.Sound {
             if (Required.TryDequeue(out LeverKind lever)) {
                 // assume not None because we don't let that get queued
                 if (lever == LeverKind.None) {
+                    // don't repeat (e.g. straight key)
                     //try again. (risky recursion)
                     return GetNextLever();
                 }
@@ -247,6 +270,13 @@ namespace upSidetone.Sound {
 
             var next = Fill[FillPos];
             FillPos = (FillPos + 1) % Fill.Length;
+
+            if (next == LeverKind.Stop) {
+                next = LeverKind.None;
+                Fill = null;
+                FillPos = 0;
+            }
+
             return new(next, false);
         }
 
@@ -255,15 +285,20 @@ namespace upSidetone.Sound {
 
             var playing = Playing.Where(x => !x.IsLockedIn);
             if (!playing.Any()) {
-                RefillBeeps();
+                RefillBeeps(aggressive: false); // none anyway, so don't check for striaght key
                 // AddPlaceholder(); // included in above
                 return;
 
             } else {
                 var last = playing.Last();
                 int count = playing.Count();
+                if (last != null && !last.DurationSamples.HasValue) {
+                    //TODO: aggressive option to bring striaght key up? XXX
+                    return;
+                }
+
                 for (int i = count; i <= 3; i++) {
-                    var nextLever = GetNextLever(); // XXX
+                    var nextLever = GetNextLever(); // XXX TODO: only if required and not a straight key atm
 
                     var beep = MakeBeep(nextLever.Item1, last, replaceIfPossible:false, required: nextLever.Item2);
                     last = beep;
@@ -279,9 +314,18 @@ namespace upSidetone.Sound {
             }
         }
 
-        private void RefillBeeps() {
+        private void RefillBeeps(bool aggressive) {
 
-            var nextBeep = GetNextUpAndDeleteRest();
+            // if aggressive, then bring straight key up to make room
+
+            var nextBeep = GetNextUpAndDeleteRest(aggressive);
+
+            var last = Playing.LastOrDefault();
+            if (!aggressive && last != null && !last.DurationSamples.HasValue) {
+                // already playing straight key. won't be anything to refill.
+                return;
+            }
+
             var nextLever = GetNextLever();
 
             // "optimization"
@@ -295,7 +339,7 @@ namespace upSidetone.Sound {
 
             var prev = sound;
             for (int i = 0; i < 3; i++) {
-                if (prev.Chosen == null) {
+                if (prev.Chosen == null || prev.Lever == LeverKind.Straight || prev.Lever == LeverKind.PoliteStraight || !prev.DurationSamples.HasValue) {
                     break;
                 }
 
@@ -407,6 +451,7 @@ namespace upSidetone.Sound {
                 sound.DurationSamples = 0;
             } else {
                 sound.DurationSamples = null; // unknown
+                sound.StraightKeyEndSamples = ditLenSamples;
             }
 
 
@@ -474,6 +519,7 @@ namespace upSidetone.Sound {
                 return;
 
             ScoreProvider.RemoveMixerInput(sound);
+            //sound.KeyReleased(ScoreProvider?.SampleCursor ?? 0); // maybe overkill 
             sound.SampleStarted -= Next_SampleStarted;
             sound.SetChoice(null);
             sound.Next = null;

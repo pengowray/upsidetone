@@ -1,4 +1,5 @@
-﻿using NAudio.Wave;
+﻿using NAudio.Gui;
+using NAudio.Wave;
 using NAudio.Wave.SampleProviders;
 using System;
 using System.Collections.Generic;
@@ -158,8 +159,16 @@ namespace upSidetone.Sound {
                     fader.SetFadeInSeconds(AttackSeconds);
                 }
                 if (options.HasFlag(BeepAttackDecay.O6_D_Smoothed) && lengthSamples.HasValue) {
-                    
+
                     fader.SetFadeOutSamples((int)(lengthSamples - (ReleaseSeconds * WaveFormat.SampleRate)), (int)(ReleaseSeconds * WaveFormat.SampleRate));
+                } else if (options.HasFlag(BeepAttackDecay.O6_D_Smoothed) && !lengthSamples.HasValue) {
+                    //var StraightAdsr = new AdsrSampleProvider(fader.ToMono(1, 0)) {
+                    var StraightAdsr = new AdsrSampleProvider(fader) {
+                        //AttackSeconds = AttackSeconds,
+                        ReleaseSeconds = ReleaseSeconds // gets used when stopping
+                    };
+                    return StraightAdsr;
+
                 }
 
                 return fader;

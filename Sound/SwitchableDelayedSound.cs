@@ -6,6 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Media.Animation;
 using NAudio.Wave;
+using NAudio.Wave.SampleProviders;
 using NWaves.Filters.Base;
 
 namespace upSidetone.Sound {
@@ -29,7 +30,7 @@ namespace upSidetone.Sound {
 
         public event SampleEvent SampleStarted;
 
-
+        public long? StraightKeyEndSamples;
 
         public long? DurationSamples { set; get; } // May include pause after sound; only use internally for setting IsDone; null for unknown
         public LeverKind Lever { set; get; } // info not needed specifically by the class, but handy for reference
@@ -39,7 +40,12 @@ namespace upSidetone.Sound {
 
         public bool IsDoneSpecial { get; private set; } // unreliable
         public bool IsDoneReading { get; private set; } // done reading
+
+        public bool IsDoneReleased { get; private set; } // straight key has been brought up (may still be playing decay)
         public bool IsDone(long SampleCursor) {
+            if (!DurationSamples.HasValue) {
+                return false; //IsDoneReleased;  //TODO: add some fadeout time
+            }
             return SampleCursor > StartAt + (DurationSamples ?? 0);
         }
 
@@ -144,6 +150,32 @@ namespace upSidetone.Sound {
             }
 
             return true;
+        }
+
+        public void KeyReleased(long cursor) {
+            // Straight key released. Decay.
+
+            if (DurationSamples.HasValue) return; // already released (or not straight key) I guess
+
+            IsDoneReleased = true;
+            DurationSamples = cursor - StartAt + StraightKeyEndSamples; // set for the first time
+
+            if (Chosen == null) {
+                IsDoneReading = true;
+                return;
+            }
+
+            if (Chosen is AdsrSampleProvider adsr) {
+                adsr.Stop();
+            } else if (Chosen is FadeOutSampleProvider fader) {
+                fader.FadeOut();
+            } else if (Chosen is SineGenerator sine) {
+                sine.EndAfterZeroCross();
+            } else {
+                // hard stop
+                Chosen = null;
+                IsDoneReading = true;
+            }
         }
     }
 }

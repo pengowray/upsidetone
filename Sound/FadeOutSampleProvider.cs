@@ -93,6 +93,14 @@ public class FadeOutSampleProvider : ISampleProvider {
         }
     }
 
+    public void FadeOut() {
+        lock (lockObject) {
+            if (position >= fadeOutStart) return;
+
+            fadeOutStart = position;
+        }
+    }
+
     public void FadeEnding(TimeSpan FadeOutLength, TimeSpan SourceLength) {
         lock (lockObject) {
             var wave = source as IWaveProvider;

@@ -242,21 +242,21 @@ namespace upSidetone.Sound {
                 
             if (mode == KeyerMode.IambicA) {
                 if (lever == LeverKind.Dit && Down.Contains(LeverKind.Dah)) {
-                    LeverKind require = wasLast ? LeverKind.None : LeverKind.Dah;
+                    LeverKind require = wasLast ? LeverKind.Dah : LeverKind.None;
                     LeverUp?.Invoke(this, lever, require, defaultFill);
                     return;
                 } else if (lever == LeverKind.Dah && Down.Contains(LeverKind.Dit)) {
-                    LeverKind require = wasLast ? LeverKind.None : LeverKind.Dit;
+                    LeverKind require = wasLast ? LeverKind.Dit : LeverKind.None;
                     LeverUp?.Invoke(this, lever, require, defaultFill);
                     return;
                 }
             } else if (mode == KeyerMode.Ultimatic) {
                 if (lever == LeverKind.Dit && Down.Contains(LeverKind.Dah)) {
-                    LeverKind require = wasLast ? LeverKind.None : LeverKind.Dah;
+                    LeverKind require = wasLast ? LeverKind.Dah : LeverKind.None;
                     LeverUp?.Invoke(this, lever, require, defaultFill);
                     return;
                 } else if (lever == LeverKind.Dah && Down.Contains(LeverKind.Dit)) {
-                    LeverKind require = wasLast ? LeverKind.None : LeverKind.Dit;
+                    LeverKind require = wasLast ? LeverKind.Dit : LeverKind.None;
                     LeverUp?.Invoke(this, lever, require, defaultFill);
                     return;
                 }

@@ -156,6 +156,7 @@ namespace upSidetone {
 
 
         private void Button_MouseDown(object sender, MouseButtonEventArgs e) {
+            /*
             var sounder = GetOrCreateSounder();
             if (e.LeftButton == MouseButtonState.Pressed) {
                 //Sounder?.StraightKeyDown(1);
@@ -163,9 +164,15 @@ namespace upSidetone {
             } else {
                 Levers?.PushLeverDown(VirtualLever.Right);
             }
+            */
         }
 
         private void Button_MouseUp(object sender, MouseButtonEventArgs e) {
+            // commented out:
+            // already using MorseMouses.ListenToAll
+            // MouseButtonState is ambiguous when multiple buttons are in use (would need to track them)
+
+            /*
             if (e.LeftButton == MouseButtonState.Released) {
                 Levers?.ReleaseLever(VirtualLever.Left);
             }
@@ -173,6 +180,7 @@ namespace upSidetone {
             if (e.RightButton == MouseButtonState.Released) {
                 Levers?.ReleaseLever(VirtualLever.Right);
             }
+            */
         }
 
         private void Button_MouseLeave(object sender, MouseEventArgs e) {

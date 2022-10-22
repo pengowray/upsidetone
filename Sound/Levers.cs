@@ -263,16 +263,12 @@ namespace upSidetone.Sound {
             } else if (mode == KeyerMode.BugStyle) {
                 if (lever == LeverKind.Dit && Down.Contains(LeverKind.PoliteStraight)) {
 
-                    //LeverKind require = wasLast ? LeverKind.None : LeverKind.PoliteStraight;
-                    //LeverUp?.Invoke(this, lever, LeverKind.None, defaultFill);
-
-                    //var fill = wasLast ? null : RepeatFill(LeverKind.PoliteStraight, LeverKind.Stop);
                     var fill = RepeatFill(LeverKind.PoliteStraight, LeverKind.Stop);
                     LeverUp?.Invoke(this, lever, LeverKind.None, fill);
                     
                     return;
                 } else if (lever == LeverKind.PoliteStraight && Down.Contains(LeverKind.Dit)) {
-                    LeverKind require = wasLast ? LeverKind.None : LeverKind.Dit;
+                    LeverKind require = wasLast ? LeverKind.Dit : LeverKind.None;
                     LeverUp?.Invoke(this, lever, require, defaultFill);
                     return;
                 }

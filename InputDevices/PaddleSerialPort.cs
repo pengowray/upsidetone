@@ -88,16 +88,8 @@ namespace upSidetone.InputDevices {
                     UpdatePiano("");
                 }
             });
-            
-            //v2 doesn't work
-            //CommonUtil.Run(() =>
-            //{
-            //    Debug.WriteLine("clearing...");
-            //    if (updateTickets == myTicket) { // only do most recent update request
-            //        UpdatePiano("");
-            //    }
-            //}, TimeSpan.FromMilliseconds(millisecondsDelay));
         }
+
         void UpdatePiano(string also = "") {
             if (Port != null) {
                 var pianoText = $"{Port.PortName}: " + string.Join(" ", ActivePins().Append(also));

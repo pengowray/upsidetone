@@ -7,13 +7,8 @@ using System.IO.Ports;
 using System.Text.RegularExpressions;
 using System.Diagnostics;
 using upSidetone.Sound;
-using Voicemeeter;
-using NWaves.Filters.Base;
-using upSidetone.Util;
 
 namespace upSidetone.InputDevices {
-
-    
 
     public class PaddleSerialPort : IDisposable {
         string Name;

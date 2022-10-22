@@ -42,7 +42,7 @@ namespace upSidetone.Sound
         // Apparently called "Direct-X" in VoiceMeeter, maybe in older versions?
         const string PRE_DS = "DS: "; 
 
-        const string PRE_WASAPI = "WDM: "; // WASAPI is called WDM in VoiceMeeter; related to KS (Kernel Streaming)
+        const string PRE_WASAPI = "WASAPI: "; // WASAPI is called WDM in VoiceMeeter, but WDM and WASAPI are separate in JACK2 for Windows; related to KS (Kernel Streaming)
         const string PRE_ASIO = "ASIO: ";
 
         private int DesiredLatency = 90;
@@ -103,7 +103,6 @@ namespace upSidetone.Sound
             }
             if (OutDevice is WasapiOut wasapiOut) {
                 if (ReportLatency <= 0) return "";
-                // deliberately call it WASAPI instead of WDM here so user can work out what it really is
                 return $"WASAPI latency: {ReportLatency}ms" + ApproxSamples();
             }
             if (OutDevice is WaveOut waveOut) {
@@ -239,7 +238,7 @@ namespace upSidetone.Sound
                     }
                 }
 
-            } else if (deviceName.StartsWith(PRE_WASAPI) || deviceName.StartsWith("WASAPI: ")) {
+            } else if (deviceName.StartsWith(PRE_WASAPI) || deviceName.StartsWith("WASAPI: ") || deviceName.StartsWith("WAS: ")) { // previously also accepted "WDM: "
                 // Allow "WDM: " (voicemeeter style) or "WASAPI: " (technically more correct)
                 //string name = deviceName.Substring(PRE_WASAPI.Length);
                 string name = deviceName.Substring(deviceName.IndexOf(':') + 2); // +2 to get past ": ".

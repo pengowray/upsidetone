@@ -36,7 +36,7 @@ namespace upSidetone.InputDevices {
             } catch (Exception e) {
                 // eg: "failed to open port: COM5 / System.UnauthorizedAccessException: 'Access to the path 'COM5' is denied.'"
                 Debug.WriteLine($"failed to open port: {Port?.PortName} / {e.GetType()}: '{e.Message}'");
-                // eg: "COM5: 'Access to the path 'COM5' is denied.'"
+                // eg: "COM5: 'Access to the path 'COM5' is denied.'" (when in use by another application or instance)
                 UpdatePiano($"{Port?.PortName}: '{e.Message}'");
             }
         }

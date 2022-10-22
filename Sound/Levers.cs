@@ -46,7 +46,7 @@ namespace upSidetone.Sound {
     public enum KeyerMode {
         None,
         StraightKey, // or plain oscillator
-        BugStyle,
+        Isopoda,
         NoIambic, // aka "no squeeze". ignore second paddle until first released (i guess?) TODO: check how used elsewhere
         SqueezeMute, // second paddle silences until both released (accessibility) TODO
         IambicA,
@@ -59,7 +59,7 @@ namespace upSidetone.Sound {
 
     // use this just for tracking which levers are down per source (todo)
 
-    public delegate void LeverEvent(Levers levers, LeverKind lever, LeverKind require, LeverKind[]? fill);
+    public delegate void LeverEvent(Levers levers, LeverKind lever, LeverKind require, LeverKind[]? fill, bool bFill = false);
     public delegate void LeverDoublePressed(Levers levers, LeverKind lever, bool doublePressed, bool priorityIncreased);
 
     public class Levers {
@@ -106,7 +106,7 @@ namespace upSidetone.Sound {
                 case KeyerMode.StraightKey:
                     return LeverKind.Straight;
 
-                case KeyerMode.BugStyle:
+                case KeyerMode.Isopoda:
                     if (left) {
                         return LeverKind.Dit;
                     } else {
@@ -150,6 +150,7 @@ namespace upSidetone.Sound {
 
             LeverKind require = lever;
             LeverKind[]? fill = null;
+            bool bFill = false; // iambic B squeezed
 
             lock (Down) {
                 bool doublePressed = false;
@@ -179,13 +180,13 @@ namespace upSidetone.Sound {
                     fill = RepeatFill(lever);
                 }
 
-                if (Mode == KeyerMode.BugStyle) {
+                if (Mode == KeyerMode.Isopoda) {
                     // defaults are fine
 
                 } else if (Mode == KeyerMode.Ultimatic) {
                     // defaults are fine?
 
-                } else if (Mode == KeyerMode.IambicA) { 
+                } else if (Mode == KeyerMode.IambicA) {
                     if (lever == LeverKind.Dah && Down.Contains(LeverKind.Dit)) {
                         fill = RepeatFill(LeverKind.Dit, LeverKind.Dah);
                         //Debug.WriteLine($"dah dit dah...: {lever} " + String.Join(" ", fill.Take(4))); 
@@ -194,11 +195,18 @@ namespace upSidetone.Sound {
                         //Debug.WriteLine($"dit dah dit...: {lever} " + String.Join(" ", fill.Take(4)));
                     }
 
+                } else if (Mode == KeyerMode.IambicB) {
+                    if (lever == LeverKind.Dah && Down.Contains(LeverKind.Dit)) {
+                        bFill = true;
+                        fill = RepeatFill(LeverKind.Dit, LeverKind.Dah);
+                    } else if (lever == LeverKind.Dit && Down.Contains(LeverKind.Dah)) {
+                        bFill = true;
+                        fill = RepeatFill(LeverKind.Dah, LeverKind.Dit);
+                    }
                 }
-
                 Down.Add(lever);
             }
-            LeverDown?.Invoke(this, lever, require, fill);
+            LeverDown?.Invoke(this, lever, require, fill, bFill);
         }
 
         private LeverKind[] RepeatFill(params LeverKind[] fillPattern) {
@@ -239,7 +247,7 @@ namespace upSidetone.Sound {
                     }
                 }
             }
-                
+
             if (mode == KeyerMode.IambicA) {
                 if (lever == LeverKind.Dit && Down.Contains(LeverKind.Dah)) {
                     LeverKind require = wasLast ? LeverKind.Dah : LeverKind.None;
@@ -250,6 +258,20 @@ namespace upSidetone.Sound {
                     LeverUp?.Invoke(this, lever, require, defaultFill);
                     return;
                 }
+            } else if (mode == KeyerMode.IambicB) {
+                //TODO: not sure
+                if (lever == LeverKind.Dit && Down.Contains(LeverKind.Dah)) {
+                    //LeverKind require = wasLast ? LeverKind.Dah : LeverKind.None;
+                    LeverKind require = LeverKind.None;
+                    LeverUp?.Invoke(this, lever, require, defaultFill);
+                    return;
+                } else if (lever == LeverKind.Dah && Down.Contains(LeverKind.Dit)) {
+                    //LeverKind require = wasLast ? LeverKind.Dit : LeverKind.None;
+                    LeverKind require = LeverKind.None;
+                    LeverUp?.Invoke(this, lever, require, defaultFill);
+                    return;
+                }
+
             } else if (mode == KeyerMode.Ultimatic) {
                 if (lever == LeverKind.Dit && Down.Contains(LeverKind.Dah)) {
                     LeverKind require = wasLast ? LeverKind.Dah : LeverKind.None;
@@ -260,9 +282,8 @@ namespace upSidetone.Sound {
                     LeverUp?.Invoke(this, lever, require, defaultFill);
                     return;
                 }
-            } else if (mode == KeyerMode.BugStyle) {
+            } else if (mode == KeyerMode.Isopoda) {
                 if (lever == LeverKind.Dit && Down.Contains(LeverKind.PoliteStraight)) {
-
                     var fill = RepeatFill(LeverKind.PoliteStraight, LeverKind.Stop);
                     LeverUp?.Invoke(this, lever, LeverKind.None, fill);
                     
@@ -275,7 +296,6 @@ namespace upSidetone.Sound {
             }
 
             LeverUp?.Invoke(this, lever, LeverKind.None, defaultFill);
-
         }
 
 

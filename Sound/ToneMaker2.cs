@@ -99,6 +99,7 @@ namespace upSidetone.Sound {
         Queue<LeverKind> Required = new();
         LeverKind[]? Fill;
         int FillPos = 0;
+        bool BFill = false; // true: iambic B squeeze mode is on: whenever a symbol is queued, the next in the fill is required
 
         public WaveFormat ParentWaveFormat => AudioOut?.Format;
 
@@ -140,7 +141,7 @@ namespace upSidetone.Sound {
             // todo
         }
 
-        private void Levers_LeverUp(Levers levers, LeverKind lever, LeverKind require, LeverKind[]? fill) {
+        private void Levers_LeverUp(Levers levers, LeverKind lever, LeverKind require, LeverKind[]? fill, bool bFill) {
             //TODO: check if correct lever released
             //TODO: check if other lever is down
 
@@ -157,6 +158,7 @@ namespace upSidetone.Sound {
                 Required.Enqueue(require);
             Fill = fill;
             FillPos = 0;
+            BFill = bFill; //always false here
 
             RefillBeeps(aggressive: false);
         }
@@ -174,13 +176,16 @@ namespace upSidetone.Sound {
             return toUp;
         }
 
-        private void Levers_LeverDown(Levers levers, LeverKind lever, LeverKind require, LeverKind[]? fill) {
+        private void Levers_LeverDown(Levers levers, LeverKind lever, LeverKind require, LeverKind[]? fill, bool bFill) {
             if (require != LeverKind.None) 
                 Required.Enqueue(require);
             Fill = fill;
             FillPos = 0;
+            BFill = bFill;
 
             RefillBeeps(aggressive: true);
+            BFillCheck2(); // lock in next if we've started a squeeze
+
             //Debug.WriteLine("queu1: " + String.Join(" ", Playing.Select(p => p.Lever)));
         }
 
@@ -310,7 +315,6 @@ namespace upSidetone.Sound {
                 }
 
                 AddPlaceholder();
-
             }
         }
 
@@ -376,15 +380,15 @@ namespace upSidetone.Sound {
 
             // run in a thread so can get back sooner though not sure if it's actually needed
 
-            _ = Task.Run(() => {
+            //_ = Task.Run(() => {
                 sender.SampleStarted -= Next_SampleStarted;
                 bool inPlaying = Playing.Contains(sender);
                 if (inPlaying) {
-                    //ThreeBeeps(null, LeverKind.Dits);
                     FillMissingBeeps();
+                    BFillCheck(sender);
                 }
 
-            }); // .ContinueWith(LogResult));
+            //}); 
 
 
         }
@@ -511,6 +515,61 @@ namespace upSidetone.Sound {
 
             Playing.Remove(sound);
             Delete(sound);
+        }
+
+        private void BFillCheck(SwitchableDelayedSound? justLockedIn = null) {
+            // require the next symbol after the currently playing one
+            // justLockedIn: if known
+
+            if (!BFill) return; // not in B-Squeeze Mode
+
+            if (justLockedIn == null) {
+                justLockedIn = Playing.FirstOrDefault(s => s.IsLockedIn && !s.IsDone(ScoreProvider.SampleCursor) && s.Chosen != null);
+            }
+
+            if (justLockedIn == null) {
+                //couldn't find. Probably a bug.
+                Debug.WriteLine($"couldn't find Just Locked-In for B fill. Probably a bug.");
+                return;
+            }
+
+            int index = Playing.IndexOf(justLockedIn);
+            if (Playing.Count() >= index + 1) {
+                var next = Playing[index + 1];
+                if (next.Chosen == null) {
+                    Debug.WriteLine("B fill has null sound. Probably a bug.");
+                    return;
+                }
+                next.RequiredPlay = true;
+            }
+
+        }
+
+        private void BFillCheck2() {
+            // require the next symbol after the currently playing one
+            // justLockedIn: if known
+
+            if (!BFill) return; // not in B-Squeeze Mode
+
+
+            var justLockedIn = Playing.LastOrDefault(s => s.RequiredPlay && s.Chosen != null);
+
+            if (justLockedIn == null) {
+                //couldn't find. Probably a bug.
+                Debug.WriteLine($"[2]couldn't find Just Locked-In for B fill. Probably a bug.");
+                return;
+            }
+
+            int index = Playing.IndexOf(justLockedIn);
+            if (Playing.Count() >= index + 1) {
+                var next = Playing[index + 1];
+                if (next.Chosen == null) {
+                    Debug.WriteLine("[2]B fill has null sound. Probably a bug.");
+                    return;
+                }
+                next.RequiredPlay = true;
+            }
+
         }
 
         private void Delete(SwitchableDelayedSound sound) {

@@ -396,8 +396,11 @@ namespace upSidetone {
         private void SerialPorts_SelectionChanged(object sender, SelectionChangedEventArgs arg) {
             Port?.Dispose();
             var selected = SerialPorts.SelectedValue as string;
-            if (selected == null || selected == "(none)")
+            if (selected == null || selected == "(none)") {
+                Port?.Dispose();
+                PortPinsPianoUpdate("");
                 return;
+            }
 
             try {
                 Debug.WriteLine("Port connection attempt...");
@@ -418,7 +421,6 @@ namespace upSidetone {
             //if (InvokeRequired) 
             this.Dispatcher.Invoke(() => {
                 if (SerialPortPianoText != null) SerialPortPianoText.Text = text;
-                //DebugText.Text = DebugText.Text + "\n" + text;
             });
         }
     }

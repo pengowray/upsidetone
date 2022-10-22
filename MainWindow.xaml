@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:upSidetone"
         mc:Ignorable="d"
-        Title="UpSidetone by Pengo" Height="610" Width="800">
+        Title="upSidetone by Pengo" Height="610" Width="800">
     <Grid PreviewKeyDown="Grid_PreviewKeyDown" PreviewKeyUp="Grid_PreviewKeyUp" LostFocus="Grid_LostFocus">
         <ComboBox Name="AudioOutputSelect" HorizontalAlignment="Left" Margin="25,45,0,0" VerticalAlignment="Top" Width="360" RenderTransformOrigin="-0.042,0.457" Height="32" SelectionChanged="AudioOutputSelect_SelectionChanged"/>
         <Button Content="Key" HorizontalAlignment="Left" Height="70" Margin="25,459,0,0" VerticalAlignment="Top" Width="360" Click="Button_Click" PreviewMouseLeftButtonDown="Button_MouseDown" PreviewMouseLeftButtonUp="Button_MouseUp" MouseDown="Button_MouseDown" MouseUp="Button_MouseUp" MouseLeave="Button_MouseLeave" MouseEnter="Button_MouseEnter"/>

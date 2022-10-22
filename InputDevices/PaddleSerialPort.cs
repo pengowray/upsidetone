@@ -30,10 +30,14 @@ namespace upSidetone.InputDevices {
                 Port.PinChanged += Port_PinChanged;
                 Port.ErrorReceived += Port_ErrorReceived;
                 Port.Open();
+                UpdatePiano("");
                 Debug.WriteLine($"Port {Port.PortName} open: {Port.IsOpen}. handshake:{Port.Handshake}");
 
             } catch (Exception e) {
-                Debug.WriteLine($"failed to open port: {Port} / {e.GetType()}: '{e.Message}'");
+                // eg: "failed to open port: COM5 / System.UnauthorizedAccessException: 'Access to the path 'COM5' is denied.'"
+                Debug.WriteLine($"failed to open port: {Port?.PortName} / {e.GetType()}: '{e.Message}'");
+                // eg: "COM5: 'Access to the path 'COM5' is denied.'"
+                UpdatePiano($"{Port?.PortName}: '{e.Message}'");
             }
         }
 
@@ -62,40 +66,39 @@ namespace upSidetone.InputDevices {
             }
 
             Debug.WriteLine($"pin changed: {e.EventType}. [{string.Join(" ", ActivePins())}]");
-            UpdatePianoTwice($"{e.EventType.ToString()}"); // e.g. "COM12: CtsChanged"
+            UpdatePianoTwice($"{e.EventType.ToString()}"); // e.g. "COM12: Open CtsChanged"
         }
 
-        int updateTickets = 0;
+        int UpdateTickets = 0;
         void UpdatePianoTwice(string also = "") {
-            Debug.WriteLine("update once...");
 
-            updateTickets++;
-            int myTicket = updateTickets;
             UpdatePiano(also);
 
+            UpdateTickets++;
+            int myTicket = UpdateTickets;
             int millisecondsDelay = 2000;
-
             Task.Run(async () =>
             {
                 await Task.Delay(millisecondsDelay);
 
-                if (updateTickets == myTicket) { // only do most recent update request
+                if (UpdateTickets == myTicket) { // only run most recent update request
                     UpdatePiano("");
                 }
             });
         }
 
         void UpdatePiano(string also = "") {
-            if (Port != null) {
+            if (Port != null && Port.IsOpen) {
                 var pianoText = $"{Port.PortName}: " + string.Join(" ", ActivePins().Append(also));
                 MainWindow.Me?.PortPinsPianoUpdate(pianoText);
             } else {
-                MainWindow.Me?.PortPinsPianoUpdate("");
+                // "also" is likely an error
+                MainWindow.Me?.PortPinsPianoUpdate(also);
             }
         }
         IEnumerable<string> ActivePins() {
             if (Port != null) {
-                if (Port.IsOpen) yield return "Open";
+                //if (Port.IsOpen) yield return "Open"; // when open, show the port name (no need to say "Open")
                 if (Port.BreakState) yield return "Break";
                 if (Port.CDHolding) yield return "CD";
                 if (Port.DsrHolding) yield return "DSR";

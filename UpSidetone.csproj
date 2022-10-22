@@ -14,6 +14,7 @@
     <PackageReference Include="NAudio" Version="2.1.0" />
     <PackageReference Include="NAudio.Midi" Version="2.1.0" />
     <PackageReference Include="NWaves" Version="0.9.6" />
+    <PackageReference Include="System.IO.Ports" Version="6.0.0" />
     <PackageReference Include="System.Management" Version="6.0.0" />
     <PackageReference Include="VoicemeeterRemote" Version="1.0.3" />
   </ItemGroup>

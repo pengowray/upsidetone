@@ -19,7 +19,7 @@
                 </Style>
             </TextBox.Style>
         </TextBox>
-        <Label Content="Midi background sounds:" HorizontalAlignment="Left" Height="30" Margin="25,164,0,0" VerticalAlignment="Top" Width="245"/>
+        <Label Content="Midi input (in background):" HorizontalAlignment="Left" Height="30" Margin="25,164,0,0" VerticalAlignment="Top" Width="245"/>
         <ComboBox Name="MidiSelect" HorizontalAlignment="Left" Margin="25,194,0,0" VerticalAlignment="Top" Width="360" Height="33" SelectionChanged="MidiSelect_SelectionChanged" />
         <TextBox Name ="MidiPianoText" Height="30" Margin="25,232,415,0" VerticalAlignment="Top">
             <TextBox.Style>
@@ -33,8 +33,8 @@
         <Button Name="AudioOutputOptionsButton" Content="Options" HorizontalAlignment="Left" Height="30" Margin="325,82,0,0" VerticalAlignment="Top" Width="60" Click="AudioOutOptions_Button_Click"/>
         <Button Name="AsioOutputOptionsButton" Content="ASIO" HorizontalAlignment="Left" Height="30" Margin="325,117,0,0" VerticalAlignment="Top" Width="60" Click="AsioOutputOptionsButton_Click" Grid.RowSpan="2"/>
         <TextBox Name="DebugText" Visibility="Hidden"  HorizontalAlignment="Left" Height="211" Margin="400,299,0,0" TextWrapping="Wrap" Text="Debug log" VerticalAlignment="Top" Width="370" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto"/>
-        <Label Content="Mouse button background sounds:" HorizontalAlignment="Left" Height="30" Margin="25,266,0,0" VerticalAlignment="Top" Width="245"/>
-        <ComboBox Name="MouseSelect" HorizontalAlignment="Left" Margin="25,296,0,0" VerticalAlignment="Top" Width="275" Height="33" SelectionChanged="MouseSelect_SelectionChanged" />
+        <Label Content="Mouse button input (in background):" HorizontalAlignment="Left" Height="30" Margin="25,266,0,0" VerticalAlignment="Top" Width="245"/>
+        <ComboBox Name="MouseSelect" HorizontalAlignment="Left" Margin="25,296,0,0" VerticalAlignment="Top" Width="360" Height="33" SelectionChanged="MouseSelect_SelectionChanged" />
         <TextBox Name ="MousePianoText" Height="30" Margin="25,334,415,0" VerticalAlignment="Top">
             <TextBox.Style>
                 <Style TargetType="{x:Type TextBox}">
@@ -44,7 +44,6 @@
                 </Style>
             </TextBox.Style>
         </TextBox>
-        <Button Name="MouseListRefresh" Content="Refresh" HorizontalAlignment="Left" Height="30" Margin="325,299,0,0" VerticalAlignment="Top" Width="60"/>
         <Label Content="Keyer mode" HorizontalAlignment="Left" Height="30" Margin="25,356,0,0" VerticalAlignment="Top" Width="245"/>
         <ComboBox Name="KeyerModeSelect" HorizontalAlignment="Left" Margin="25,386,0,0" VerticalAlignment="Top" Width="360" Height="33" SelectionChanged="KeyerModeSelect_SelectionChanged" />
         <TextBox Name ="KeyerPianoText" Height="30" Margin="25,424,415,0" VerticalAlignment="Top">
@@ -65,6 +64,19 @@
         <CheckBox Name="Flipped" Content="Flip left/right" HorizontalAlignment="Left" Height="20" Margin="510,210,0,0" VerticalAlignment="Top" Width="135" Checked="Flipped_Checked" Unchecked="Flipped_Checked"/>
         <Label Content="Inputs:" HorizontalAlignment="Left" Margin="425,203,0,0" VerticalAlignment="Top" Height="32" Width="80"/>
         <Label Content="Hz" HorizontalAlignment="Left" Margin="605,97,0,0" VerticalAlignment="Top" Height="32" Width="80"/>
+        <Label Content="Serial port keyer:" HorizontalAlignment="Left" Height="30" Margin="425,266,0,0" VerticalAlignment="Top" Width="245"/>
+        <ComboBox Name="SerialPorts" HorizontalAlignment="Left" Margin="425,296,0,0" VerticalAlignment="Top" Width="275" Height="33" SelectionChanged="SerialPorts_SelectionChanged" />
+        <Label Content="Serial port setup:" HorizontalAlignment="Left" Height="30" Margin="425,385,0,0" VerticalAlignment="Top" Width="245"/>
+        <ComboBox Name="SerialPortSetup" HorizontalAlignment="Left" Margin="425,415,0,0" VerticalAlignment="Top" Width="275" Height="32" />
+        <TextBox x:Name ="SerialPortPianoText" Height="30" Margin="425,334,100,0" VerticalAlignment="Top">
+            <TextBox.Style>
+                <Style TargetType="{x:Type TextBox}">
+                    <Setter Property="IsReadOnly" Value="True" />
+                    <Setter Property="BorderThickness" Value="0" />
+                    <Setter Property="TextWrapping" Value="Wrap" />
+                </Style>
+            </TextBox.Style>
+        </TextBox>
 
     </Grid>
 </Window>

@@ -17,6 +17,8 @@ using System.Windows.Navigation;
 using System.Windows.Shapes;
 
 using upSidetone.InputDevices;
+using static System.Net.Mime.MediaTypeNames;
+using System.Diagnostics;
 
 namespace upSidetone {
     /// <summary>
@@ -34,18 +36,22 @@ namespace upSidetone {
         MidiInput MidiInput;
         KeyboardInputWPF KeyboardInput;
         MorseMouses MorseMouses;
+        PaddleSerialPort Port;
 
         private bool disposedValue;
 
         public MainWindow() {
             Me = this;
+            
+            Debug.WriteLine("hello.");
+
 
             Closed += MainWindow_Closed;
 
             InitializeComponent();
 
             Levers = new Levers();
-            Levers.Mode = KeyerMode.IambicA;
+            Levers.Mode = KeyerMode.Ultimatic; //KeyerMode.IambicA;
 
             MidiInput = new MidiInput();
             MidiInput.Levers = Levers;
@@ -76,7 +82,7 @@ namespace upSidetone {
             KeyerModeSelect.Items.Add("Iambic A");
             KeyerModeSelect.Items.Add("Ultimatic");
             KeyerModeSelect.Items.Add("Bug style");
-            KeyerModeSelect.SelectedIndex = 1; // iambic A
+            KeyerModeSelect.SelectedIndex = 2; // Ultimatic
 
             Volume.Text = "50";
             Frequency.Text = "550";
@@ -84,6 +90,16 @@ namespace upSidetone {
             Flipped.IsChecked = false;
 
             SoundGen?.SetGain(0.5);
+
+            foreach (var device in PaddleSerialPort.GetPortNames()) {
+                SerialPorts.Items.Add(device);
+            }
+            SerialPorts.SelectedIndex = 0;
+
+            SerialPortSetup.Items.Add("CTS + DSR");
+            SerialPortSetup.SelectedIndex = 0;
+
+            Debug.WriteLine("...hello.");
 
         }
 
@@ -373,5 +389,37 @@ namespace upSidetone {
             }
         }
 
+        private void MouseListRefresh_Click(object sender, RoutedEventArgs e) {
+
+        }
+
+        private void SerialPorts_SelectionChanged(object sender, SelectionChangedEventArgs arg) {
+            Port?.Dispose();
+            var selected = SerialPorts.SelectedValue as string;
+            if (selected == null || selected == "(none)")
+                return;
+
+            try {
+                Debug.WriteLine("Port connection attempt...");
+
+                Port = new PaddleSerialPort(selected, Levers);
+                Port.Enable();
+                Debug.WriteLine("Port connected: " + selected);
+                arg.Handled = true;
+            } catch (Exception e) {
+                Debug.WriteLine("Port connect failed: " + selected + " " + e.GetType() + ": " + e.Message);
+            }
+
+        }
+
+        public void PortPinsPianoUpdate(string text) {
+            if (SerialPortPianoText == null) return;
+
+            //if (InvokeRequired) 
+            this.Dispatcher.Invoke(() => {
+                if (SerialPortPianoText != null) SerialPortPianoText.Text = text;
+                //DebugText.Text = DebugText.Text + "\n" + text;
+            });
+        }
     }
 }

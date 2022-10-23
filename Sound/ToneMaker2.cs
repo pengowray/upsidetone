@@ -78,21 +78,12 @@ namespace upSidetone.Sound {
             return true;
         }
 
-        //SwitchableDelayedSound Playing;
-        //LeverKind PlayingLever;
-        //SwitchableDelayedSound Next;
-        //LeverKind NextLever;
-        List<SwitchableDelayedSound> Playing = new();
-        //public List<LeverKind> Played = new(); // dits and dahs. or just a string of ".-*" ?
-
         BeepAttackDecay Options = BeepAttackDecay.Preset_Smooth;
         //BeepAttackDecay Options = BeepAttackDecay.Preset_SharpNoClick; // not working? TODO (endless beep)
-
-        //SwitchableDelayedSound AndThen;
-
         AudioOut AudioOut;
-        ScoreProvider ScoreProvider;
         //MixingSampleProvider ScoreProvider;
+        ScoreProvider ScoreProvider;
+        List<SwitchableDelayedSound> Playing = new(); //TODO: shouldn't this be in ScoreProvider instead? (basically already duplicated in there)
         Beep Beep;
         private bool disposedValue;
 
@@ -103,7 +94,7 @@ namespace upSidetone.Sound {
 
         public WaveFormat ParentWaveFormat => AudioOut?.Format;
 
-        // note: We use mono because mono is assumed by FadeOutSampleProvider and SwitchableDelayedSound;
+        // note: We use mono because mono is assumed + required by FadeOutSampleProvider and SwitchableDelayedSound or they'll mess up
         // TODO: make them work with stereo / abitrary channels
         public WaveFormat WaveFormat => WaveFormat.CreateIeeeFloatWaveFormat(ParentWaveFormat.SampleRate, 1);
 
@@ -137,6 +128,37 @@ namespace upSidetone.Sound {
             levers.LeverDoubled -= Levers_LeverDoubled;
         }
 
+
+        private Tuple<LeverKind, Requiredness> GetNextLever() {
+            // returns LeverKind and if it's "required" (e.g. not deleted from the queue if paddles released)
+
+            if (Required.TryDequeue(out LeverKind lever)) {
+                // assume not None because we don't let that get queued
+                if (lever == LeverKind.None) {
+                    // don't repeat (e.g. straight key)
+                    //try again. (risky recursion)
+                    return GetNextLever();
+                }
+                return new(lever, Requiredness.Required);
+            }
+
+            if (Fill == null || Fill.Length == 0) {
+                // nothing queued
+                return new(LeverKind.None, Requiredness.Fill);
+            }
+
+            var next = Fill[FillPos];
+            FillPos = (FillPos + 1) % Fill.Length;
+
+            if (next == LeverKind.Stop) {
+                next = LeverKind.None;
+                Fill = null;
+                FillPos = 0;
+            }
+
+            return new(next, Requiredness.Fill);
+        }
+
         private void Levers_LeverDoubled(Levers levers, LeverKind lever, bool doublePressed, bool priorityIncreased) {
             // todo
         }
@@ -160,8 +182,25 @@ namespace upSidetone.Sound {
             FillPos = 0;
             BFill = bFill; //always false here
 
-            RefillBeeps(aggressive: false);
+            RefillBeeps(replaceBFill: false);
         }
+
+        private void Levers_LeverDown(Levers levers, LeverKind lever, LeverKind require, LeverKind[]? fill, bool bFill) {
+            if (require != LeverKind.None) 
+                Required.Enqueue(require);
+            Fill = fill;
+            FillPos = 0;
+            BFill = bFill;
+
+            _ = ReleaseStraightKey();
+
+            RefillBeeps(replaceBFill: true);
+            BFillCheck2(); // lock in next if we've started a squeeze
+
+            //Debug.WriteLine("queu1: " + String.Join(" ", Playing.Select(p => p.Lever)));
+        }
+
+
 
         private SwitchableDelayedSound? ReleaseStraightKey() {
             var toUp = Playing.FirstOrDefault(sound => sound.IsLockedIn && !sound.DurationSamples.HasValue); // && !IsDone(sound) && sound.Lever == LeverKind.Straight ....
@@ -175,137 +214,43 @@ namespace upSidetone.Sound {
 
             return toUp;
         }
+        private void Next_SampleStarted(SwitchableDelayedSound sender) {
 
-        private void Levers_LeverDown(Levers levers, LeverKind lever, LeverKind require, LeverKind[]? fill, bool bFill) {
-            if (require != LeverKind.None) 
-                Required.Enqueue(require);
-            Fill = fill;
-            FillPos = 0;
-            BFill = bFill;
+            // run in a thread so can get back sooner though not sure if it's actually needed
 
-            RefillBeeps(aggressive: true);
-            BFillCheck2(); // lock in next if we've started a squeeze
-
-            //Debug.WriteLine("queu1: " + String.Join(" ", Playing.Select(p => p.Lever)));
-        }
-
-
-        private SwitchableDelayedSound? GetLastUp() {
-            // finds the next blank sound, or otherwise the last sound which you can put another sound after.
-
-            return Playing.LastOrDefault();
-
-        }
-        private SwitchableDelayedSound? GetNextUpAndDeleteRest(bool aggressive = false) {
-            // finds the next non-required, non-locked in Sound that can be replaced, or otherwise the best Sound to place a sound after.
-
-            // returns in order of preference:
-            // 1. first not required & not locked in -- for replacing
-            // 2. first not required but locked in -- for going after
-            // 3. last required -- for going after
-
-            //int requiredIndex = Playing.FindLastIndex(p => !p.IsLockedIn && p.RequiredPlay);
-
-            //SwitchableDelayedSound? lastRequired = null;
-            SwitchableDelayedSound? lastCanPutOneAfter = null;
-            SwitchableDelayedSound? firstCanReplace = null;
-            //int ogReturnIndex = -2;
-
-            List<SwitchableDelayedSound> newPlaying = new();
-            int index = 0;
-            SwitchableDelayedSound? straightKey = aggressive ? ReleaseStraightKey() : null;
-
-            foreach (var sound in Playing.ToArray()) {
-                if (straightKey != null && sound == straightKey) {
-                    newPlaying.Add(sound);
-                    lastCanPutOneAfter = sound;
-
-                } else if ((sound.RequiredPlay || sound.IsLockedIn) && !IsDone(sound)) {
-                    // maybe can put a sound after it
-                    lastCanPutOneAfter = sound;
-                    newPlaying.Add(sound); 
-                    
-                } else if (!sound.RequiredPlay && !sound.IsLockedIn && firstCanReplace == null) {
-                    // a better choice showed up after: not locked in (i.e. placeholder)
-                    firstCanReplace = sound;
-                    newPlaying.Add(sound);
-
-                } else {
-                    // delete (unless in the middle of playing)
-                    if (sound.IsLockedIn && !IsDone(sound)) {
-                        newPlaying.Add(sound); 
-                    } else {
-                        Delete(sound);
-                    }
-                }
-
-                index++;
-            }
-            Playing = newPlaying;
-
-            bool clearNextUp = true;
-            if (clearNextUp && firstCanReplace != null && !firstCanReplace.IsLockedIn) {
-                // clear next up
-                // todo: might as well always do this?
-                firstCanReplace.SetChoice(null);
+            //_ = Task.Run(() => {
+            sender.SampleStarted -= Next_SampleStarted;
+            bool inPlaying = Playing.Contains(sender);
+            if (inPlaying) {
+                FillMissingBeeps();
+                BFillCheck(sender);
             }
 
-
-            return firstCanReplace ?? lastCanPutOneAfter;
-        }
-
-
-        private Tuple<LeverKind, bool> GetNextLever() {
-            // returns LeverKind and if it's "required" (e.g. not deleted from the queue if paddles released)
-
-            if (Required.TryDequeue(out LeverKind lever)) {
-                // assume not None because we don't let that get queued
-                if (lever == LeverKind.None) {
-                    // don't repeat (e.g. straight key)
-                    //try again. (risky recursion)
-                    return GetNextLever();
-                }
-                return new(lever, true);
-            }
-
-            if (Fill == null || Fill.Length == 0) {
-                // nothing queued
-                return new(LeverKind.None, false);
-            }
-
-            var next = Fill[FillPos];
-            FillPos = (FillPos + 1) % Fill.Length;
-
-            if (next == LeverKind.Stop) {
-                next = LeverKind.None;
-                Fill = null;
-                FillPos = 0;
-            }
-
-            return new(next, false);
+            //}); 
         }
 
         private void FillMissingBeeps() {
             // (done?) TODO: don't remove "required" beeps
 
+            var last = Playing.LastOrDefault();
+            if (last != null && !last.DurationSamples.HasValue) {
+                // already playing straight key. won't be anything to refill.
+                return;
+            }
+
             var playing = Playing.Where(x => !x.IsLockedIn);
             if (!playing.Any()) {
-                RefillBeeps(aggressive: false); // none anyway, so don't check for striaght key
+                // no notes anyway, so releaseStraightKey + replaceBFill make no difference
+                RefillBeeps(replaceBFill: false); 
                 // AddPlaceholder(); // included in above
                 return;
 
             } else {
-                var last = playing.Last();
                 int count = playing.Count();
-                if (last != null && !last.DurationSamples.HasValue) {
-                    //TODO: aggressive option to bring striaght key up? XXX
-                    return;
-                }
-
                 for (int i = count; i <= 3; i++) {
                     var nextLever = GetNextLever(); // XXX TODO: only if required and not a straight key atm
 
-                    var beep = MakeBeep(nextLever.Item1, last, replaceIfPossible:false, required: nextLever.Item2);
+                    var beep = MakeBeep(nextLever.Item1, last, replaceIfPossible: false, required: nextLever.Item2);
                     last = beep;
 
                     if (nextLever.Item1 == LeverKind.None) {
@@ -318,17 +263,13 @@ namespace upSidetone.Sound {
             }
         }
 
-        private void RefillBeeps(bool aggressive) {
+
+
+        private void RefillBeeps(bool replaceBFill) {
 
             // if aggressive, then bring straight key up to make room
 
-            var nextBeep = GetNextUpAndDeleteRest(aggressive);
-
-            var last = Playing.LastOrDefault();
-            if (!aggressive && last != null && !last.DurationSamples.HasValue) {
-                // already playing straight key. won't be anything to refill.
-                return;
-            }
+            var nextBeep = GetNextUpAndDeleteRest(replaceBFill);
 
             var nextLever = GetNextLever();
 
@@ -355,10 +296,78 @@ namespace upSidetone.Sound {
             AddPlaceholder();
         }
 
-        private SwitchableDelayedSound AddPlaceholder() {
+        private SwitchableDelayedSound? GetNextUpAndDeleteRest(bool replaceBFill) {
+            // finds the next non-required, non-locked in Sound that can be replaced, or otherwise the best Sound to place a sound after.
+
+            // returns in order of preference:
+            // 1. first not required & not locked in -- for replacing
+            // 2. first not required but locked in -- for going after
+            // 3. last required -- for going after
+
+            //int requiredIndex = Playing.FindLastIndex(p => !p.IsLockedIn && p.RequiredPlay);
+
+            //SwitchableDelayedSound? lastRequired = null;
+            SwitchableDelayedSound? lastCanPutOneAfter = null;
+            SwitchableDelayedSound? firstCanReplace = null;
+            //int ogReturnIndex = -2;
+
+            List<SwitchableDelayedSound> newPlaying = new();
+            int index = 0;
+
+            //TODO: i think we've already dealt with straight keys by now (either brought up or returned due to them)
+            SwitchableDelayedSound? straightkey = null;
+            var last = Playing.LastOrDefault();
+            if (last != null && !last.DurationSamples.HasValue) {
+                straightkey = last;
+            }
+
+            foreach (var sound in Playing.ToArray()) {
+                bool isRequired = sound.IsRequired(!replaceBFill);
+
+                if (sound == straightkey) {
+                    newPlaying.Add(sound);
+                    lastCanPutOneAfter = sound;
+
+                } else if ((isRequired || sound.IsLockedIn) && !IsDone(sound)) {
+                    // maybe can put a sound after it
+                    lastCanPutOneAfter = sound;
+                    newPlaying.Add(sound);
+
+                } else if (!isRequired && !sound.IsLockedIn && firstCanReplace == null) {
+                    // a better choice showed up after: not locked in (i.e. placeholder)
+                    firstCanReplace = sound;
+                    newPlaying.Add(sound);
+
+                } else {
+                    // delete (unless in the middle of playing)
+                    if (sound.IsLockedIn && !IsDone(sound)) {
+                        newPlaying.Add(sound);
+                    } else {
+                        Delete(sound);
+                    }
+                }
+
+                index++;
+            }
+            Playing = newPlaying;
+
+            bool clearNextUp = true;
+            if (clearNextUp && firstCanReplace != null && !firstCanReplace.IsLockedIn) {
+                // clear next up
+                // todo: might as well always do this?
+                firstCanReplace.SetChoice(null);
+            }
+
+
+            return firstCanReplace ?? lastCanPutOneAfter;
+        }
+
+        private SwitchableDelayedSound? AddPlaceholder() {
             // if needed and plausible, add a placeholder at the end
 
-            var last = GetLastUp(); // = Playing.LastOrDefault();
+            // finds the next blank sound, or otherwise the last sound which you can put another sound after.
+            var last = Playing.LastOrDefault();
+
 
             if (last != null && last.Chosen != null && !IsDone(last) && ((last.DurationSamples ?? 0) > 0)) {
                 // ok we could have a placeholder
@@ -366,7 +375,7 @@ namespace upSidetone.Sound {
                     Lever = LeverKind.None,
                     StartAt = last.StartAt + (last.DurationSamples ?? 0), // already checked DurationSamples has a value
                     DurationSamples = 0,
-                    RequiredPlay = false,
+                    Requiredness = Requiredness.Fill,
                 };
                 last.Next = placeholder;
                 Add(placeholder);
@@ -376,24 +385,8 @@ namespace upSidetone.Sound {
             return null;
         }
 
-        private void Next_SampleStarted(SwitchableDelayedSound sender) {
 
-            // run in a thread so can get back sooner though not sure if it's actually needed
-
-            //_ = Task.Run(() => {
-                sender.SampleStarted -= Next_SampleStarted;
-                bool inPlaying = Playing.Contains(sender);
-                if (inPlaying) {
-                    FillMissingBeeps();
-                    BFillCheck(sender);
-                }
-
-            //}); 
-
-
-        }
-
-        private SwitchableDelayedSound MakeBeep(LeverKind lever, SwitchableDelayedSound? afterThis = null, bool replaceIfPossible = false, bool required = false) {
+        private SwitchableDelayedSound MakeBeep(LeverKind lever, SwitchableDelayedSound? afterThis = null, bool replaceIfPossible = false, Requiredness required = Requiredness.Fill) {
 
             //double ditLen, double whenInDits = 0;
             double? ditLen = null;
@@ -426,9 +419,10 @@ namespace upSidetone.Sound {
                 if (afterThis.Chosen == null) {
                     // actually replace, rather than go after, a null empty sound
                     actuallyReplace = true;
-                } else if (replaceIfPossible && !afterThis.IsLockedIn && !afterThis.RequiredPlay) {
+                } else if (replaceIfPossible && !afterThis.IsLockedIn && afterThis.Requiredness != Requiredness.Required) { //bFill can be replaced
                     actuallyReplace = true;
-                } else if (IsDone(afterThis)) { // too unreliable
+                } else if (IsDone(afterThis)) {
+                    // too late to go after
                     afterThis = null;
                 }
             }
@@ -446,7 +440,7 @@ namespace upSidetone.Sound {
                 }
             }
             sound.Lever = lever;
-            sound.RequiredPlay = required;
+            sound.Requiredness = required;
             //sound.Next = next;
 
             if (beepSamples != null) {
@@ -540,7 +534,7 @@ namespace upSidetone.Sound {
                     Debug.WriteLine("B fill has null sound. Probably a bug.");
                     return;
                 }
-                next.RequiredPlay = true;
+                next.Requiredness = Requiredness.BNote;
             }
 
         }
@@ -551,8 +545,7 @@ namespace upSidetone.Sound {
 
             if (!BFill) return; // not in B-Squeeze Mode
 
-
-            var justLockedIn = Playing.LastOrDefault(s => s.RequiredPlay && s.Chosen != null);
+            var justLockedIn = Playing.LastOrDefault(s => s.Requiredness == Requiredness.Required && s.Chosen != null);
 
             if (justLockedIn == null) {
                 //couldn't find. Probably a bug.
@@ -567,7 +560,7 @@ namespace upSidetone.Sound {
                     Debug.WriteLine("[2]B fill has null sound. Probably a bug.");
                     return;
                 }
-                next.RequiredPlay = true;
+                next.Requiredness = Requiredness.BNote;
             }
 
         }
@@ -582,7 +575,7 @@ namespace upSidetone.Sound {
             sound.SampleStarted -= Next_SampleStarted;
             sound.SetChoice(null);
             sound.Next = null;
-            sound.RequiredPlay = false;
+            sound.Requiredness = Requiredness.Fill;
         }
 
 

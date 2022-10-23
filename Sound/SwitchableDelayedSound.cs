@@ -13,6 +13,12 @@ namespace upSidetone.Sound {
 
     public delegate void SampleEvent(SwitchableDelayedSound sender);
 
+    public enum Requiredness {
+        Fill = 1, // Filler -- assumed future note or blank, subject to change
+        BNote = 2, // Fill from Iambic B: played after paddles released, unless replaced by the other paddle's press
+        Required = 3,
+    }
+
     public class SwitchableDelayedSound : ISampleProvider {
 
         // allows changing which ISampleProvider to use up until first sample is Read()
@@ -34,8 +40,15 @@ namespace upSidetone.Sound {
 
         public long? DurationSamples { set; get; } // May include pause after sound; only use internally for setting IsDone; null for unknown
         public LeverKind Lever { set; get; } // info not needed specifically by the class, but handy for reference
-        public SwitchableDelayedSound Next { get; set; } // not used internally
-        public bool RequiredPlay { get; set; } // not used internally in this class. If true: don't delete/ignore/replace this sound when lever is released; May be ignored if other sounds before this one with RequiredPlay=false
+        public SwitchableDelayedSound Next { get; set; } // TODO: only assigned to. Delete?
+
+        //public bool RequiredPlay { get => Requiredness != Requiredness.Fill; } // not used internally in this class. If true: don't delete/ignore/replace this sound when lever is released; May be ignored if other sounds before this one with RequiredPlay=false
+        public bool IsRequired(bool isBFillRequired) {
+            if (Requiredness == Requiredness.Fill) return false;
+            if (Requiredness == Requiredness.Required) return true;
+            return isBFillRequired;
+        }
+        public Requiredness Requiredness { get; set; }
 
 
         public bool IsDoneSpecial { get; private set; } // unreliable

@@ -11,11 +11,11 @@ Low latency morse code keyer app for PC
 * Treat various inputs like they're a straight key. Beeps when you:
 
   * Mouse: Click the button, or choose a mouse to use in the background
-  * Keyboard (foreground only): left and right ctrl keys; [ and ]; Z and X; left and right arrows
+  * Keyboard (foreground only): left and right ctrl keys; \[ and \]; Z and X; left and right arrows
   * MIDI instrument (works in background): Press any midi key on a selected MIDI device (every second key is a dash)
   * Serial port: Only tested with a straight key (let me know if it works with your paddle)
   * Other inputs: feel free to ask
-  * Us the "Flip left/right" if your double paddles are wired backwards etc
+  * Check "Flip left/right" if your double paddles are wired backwards etc
 
 * Keyer modes:
 
@@ -30,8 +30,8 @@ Low latency morse code keyer app for PC
 
 * ASIO or WASAPI recommended. Reduce WASAPI latency with the options button.
 * ASIO support. Supports the various Windows audio output APIs, including ASIO.
-* Choose latency for audio drivers (WaveOut / DirectSound / WASAPI)
-* Automatically chooses the lowest sample rate for the device (Minimum: 8,000 samples/second). 
+* Choose latency / audio buffer size (WASAPI / DirectSound / MME supported)
+* Automatically chooses the lowest sample rate for the device (Minimum: 8,000 samples/second) to reduce xruns.
 
 # Uses
 
@@ -42,7 +42,7 @@ Low latency morse code keyer app for PC
 
 # Motivation(s)
 
-There were a number of reasons to create upSidetone. The most basic was to practice keying morse code, which seemed like something that ought to be possible with minimal audio latency, and without purchasing any obsolete hardware (Why hunt for some specific legacy serial port adapter with $30 shipping when you can modify a $5 USB mouse by gluing a headphone jack to it?). Apart from serving as a proof-of-concept (to show a low latency PC-generated sidetone is possible in 2022), it also let me create my ideal keying mode ("Cyborg"), get my head around how Iambic A and B keying modes work on a millisecond scale, and learn the names of all the pins on those serial ports. I also did not want to make this another project that goes silent with its author, so I've open sourced it with a permissive license. 
+There were a number of reasons to create upSidetone. The most basic was to practice keying morse code, which seemed like something that ought to be possible with minimal audio latency, and without purchasing any obsolete hardware (Why hunt for some specific legacy serial port adapter and pay shipping to Australia when you can modify a $5 USB mouse by gluing a headphone jack to it?). Apart from serving as a proof-of-concept (to show a low latency PC-generated sidetone is possible in 2022), it also let me try creating my ideal CW keying mode ("cyborg"), get my head around how Iambic A and B keying modes work more precisely than I ever cared to think about, and learn the names of all the pins on those legacy serial ports. I also did not want to make this another project that goes silent with its author, so I've open sourced it with a permissive license. 
 
 It's basic, but it's now at a point where people other than me might also find a use for it.
 

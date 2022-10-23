@@ -284,9 +284,11 @@ namespace upSidetone.Sound {
                 }
             } else if (mode == KeyerMode.Isopoda) {
                 if (lever == LeverKind.Dit && Down.Contains(LeverKind.PoliteStraight)) {
-                    var fill = RepeatFill(LeverKind.PoliteStraight, LeverKind.Stop);
-                    LeverUp?.Invoke(this, lever, LeverKind.None, fill);
-                    
+                    //var fill = RepeatFill(LeverKind.PoliteStraight, LeverKind.Stop);
+                    //LeverUp?.Invoke(this, lever, LeverKind.None, fill);
+                    // note: required lever should not be started if straight key released
+                    LeverKind require = wasLast ? LeverKind.PoliteStraight: LeverKind.None;
+                    LeverUp?.Invoke(this, lever, require, null);
                     return;
                 } else if (lever == LeverKind.PoliteStraight && Down.Contains(LeverKind.Dit)) {
                     LeverKind require = wasLast ? LeverKind.Dit : LeverKind.None;

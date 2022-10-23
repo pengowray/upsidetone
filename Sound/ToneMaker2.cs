@@ -91,6 +91,7 @@ namespace upSidetone.Sound {
         LeverKind[]? Fill;
         int FillPos = 0;
         bool BFill = false; // true: iambic B squeeze mode is on: whenever a symbol is queued, the next in the fill is required
+        bool StraightDown = false; // is the straight key down (shouldn't we just ask Levers?)
 
         public WaveFormat ParentWaveFormat => AudioOut?.Format;
 
@@ -137,8 +138,12 @@ namespace upSidetone.Sound {
                 if (lever == LeverKind.None) {
                     // don't repeat (e.g. straight key)
                     //try again. (risky recursion)
-                    return GetNextLever();
+                    //return GetNextLever();
                 }
+                if (lever == LeverKind.PoliteStraight && !StraightDown) {
+                    return new(LeverKind.None, Requiredness.Fill);
+                }
+
                 return new(lever, Requiredness.Required);
             }
 
@@ -170,14 +175,16 @@ namespace upSidetone.Sound {
             //if bringing up active straight key...
 
             if (lever == LeverKind.Straight || lever == LeverKind.PoliteStraight) {
-                // bring up straight key
+                StraightDown = false;
 
-                _ = ReleaseStraightKey();
+                _ = ReleaseStraightKey(aggressive: true); // also release budding queued straight keys
+            } else {
+                //_ = ReleaseOldStraightKeys();
             }
 
             // the rest is the same as Levers_LeverDown()
-            if (require != LeverKind.None)
-                Required.Enqueue(require);
+            if (require != LeverKind.None) 
+                Required.Enqueue(require); // e.g. the other paddle that's still down
             Fill = fill;
             FillPos = 0;
             BFill = bFill; //always false here
@@ -192,7 +199,11 @@ namespace upSidetone.Sound {
             FillPos = 0;
             BFill = bFill;
 
-            _ = ReleaseStraightKey();
+            if (lever == LeverKind.Straight || lever == LeverKind.PoliteStraight) {
+                StraightDown = true;
+            } else {
+                _ = ReleaseStraightKey(aggressive: true);
+            }
 
             RefillBeeps(replaceBFill: true);
             BFillCheck2(); // lock in next if we've started a squeeze
@@ -202,17 +213,21 @@ namespace upSidetone.Sound {
 
 
 
-        private SwitchableDelayedSound? ReleaseStraightKey() {
-            var toUp = Playing.FirstOrDefault(sound => sound.IsLockedIn && !sound.DurationSamples.HasValue); // && !IsDone(sound) && sound.Lever == LeverKind.Straight ....
-            toUp?.KeyReleased(ScoreProvider.SampleCursor);
+        private SwitchableDelayedSound? ReleaseStraightKey(bool aggressive) {
+            
+            // probably overly aggressive in releasing the straight key when the problem was straight keys getting stuck because they were still in the Required queue (previously in the fill queue)
+
+            var straightkey = GetActiveStraightKey(true);
+            straightkey?.KeyReleased(ScoreProvider.SampleCursor);
 
             // Release queued straight keys too (to prevent straight key starting with no immediate way to release it)
-            // doesn't work if ... && !sound.RequiredPlay
-            foreach (var notYetDown in Playing.Where(sound => !sound.IsLockedIn && !sound.DurationSamples.HasValue && sound.Chosen != null).ToArray()) {
-                Remove(notYetDown);
+            if (aggressive) { 
+                foreach (var notYetDown in Playing.Where(sound => !sound.IsLockedIn && !sound.DurationSamples.HasValue && sound.Chosen != null).ToArray()) {
+                    Remove(notYetDown);
+                }
             }
 
-            return toUp;
+            return straightkey;
         }
         private void Next_SampleStarted(SwitchableDelayedSound sender) {
 
@@ -296,6 +311,12 @@ namespace upSidetone.Sound {
             AddPlaceholder();
         }
 
+        private SwitchableDelayedSound? GetActiveStraightKey(bool lockedInOnly) {
+            var last = Playing?.FindLast(s => s != null && !s.DurationSamples.HasValue && s.Chosen != null && (!lockedInOnly || s.IsLockedIn));
+
+            return last;
+        }
+
         private SwitchableDelayedSound? GetNextUpAndDeleteRest(bool replaceBFill) {
             // finds the next non-required, non-locked in Sound that can be replaced, or otherwise the best Sound to place a sound after.
 
@@ -315,11 +336,7 @@ namespace upSidetone.Sound {
             int index = 0;
 
             //TODO: i think we've already dealt with straight keys by now (either brought up or returned due to them)
-            SwitchableDelayedSound? straightkey = null;
-            var last = Playing.LastOrDefault();
-            if (last != null && !last.DurationSamples.HasValue) {
-                straightkey = last;
-            }
+            SwitchableDelayedSound? straightkey = GetActiveStraightKey(false);
 
             foreach (var sound in Playing.ToArray()) {
                 bool isRequired = sound.IsRequired(!replaceBFill);

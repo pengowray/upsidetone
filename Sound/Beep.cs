@@ -105,11 +105,11 @@ namespace upSidetone.Sound {
         
         // todo: package up options into audio settings or something
 
-        //bool ReleaseQuantized; // end after crossing zero
-        //bool OscillatorReset; // start at 0 degrees, sine 0; 
-        //BeepAttackDecay AttackDecayOptions = BeepAttackDecay.Preset_Smooth;
-        float AttackSeconds = 0.015f;
-        float ReleaseSeconds = 0.015f;
+        //float AttackSeconds = 0.015f;
+        //float ReleaseSeconds = 0.015f;
+        float AttackSeconds = 0.008f; // linear fade in
+        float ReleaseSeconds = 0.008f; // linear fade out
+        float ReleaseSecondsAdsr = 0.015f; // uses a different curve
 
         public double Frequency = 550;
         public double Gain = 0.5;
@@ -165,7 +165,7 @@ namespace upSidetone.Sound {
                     //var StraightAdsr = new AdsrSampleProvider(fader.ToMono(1, 0)) {
                     var StraightAdsr = new AdsrSampleProvider(fader) {
                         //AttackSeconds = AttackSeconds,
-                        ReleaseSeconds = ReleaseSeconds // gets used when stopping
+                        ReleaseSeconds = ReleaseSecondsAdsr // gets used when stopping
                     };
                     return StraightAdsr;
 

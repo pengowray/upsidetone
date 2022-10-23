@@ -238,7 +238,7 @@ namespace upSidetone {
         }
 
         private void MainWindow_Closed(object? sender, EventArgs e) {
-            if (MorseMouses != null) MorseMouses.ListenToAll = true;
+            if (MorseMouses != null) MorseMouses.ListenToAll = false;
             Dispose();
         }
 
@@ -310,9 +310,13 @@ namespace upSidetone {
         }
 
         private void Grid_LostFocus(object sender, RoutedEventArgs e) {
+            // loses focus when interacting with drop downs, so doesn't seem useful
+
             //TODO: only release for the key button
-            Levers?.ReleaseLever(VirtualLever.Left);
-            Levers?.ReleaseLever(VirtualLever.Right);
+            //if (MorseMouses != null) MorseMouses.ListenToAll = false;
+
+            //Levers?.ReleaseLever(VirtualLever.Left);
+            //Levers?.ReleaseLever(VirtualLever.Right);
 
         }
 

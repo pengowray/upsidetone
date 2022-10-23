@@ -1,52 +1,64 @@
-# UpSidetone 
+# upSidetone 
 
 by Pengo Wray [AA9GO]
 
-Low latency morse code oscillator. Might make it a keyer later.
+Low latency morse code keyer app for PC
 
-![image](https://user-images.githubusercontent.com/800133/192145002-a4ffde78-d4ef-469f-8a21-27c6ac3b8d66.png)
-
-# Uses
-
-* Practice morse code keying with a straight key
-* Send Morse code over Zoom or Discord to your CW Club [either: 1. Share the app, or 2. Configure VoiceMeeter Banana to send the audio with your mic; TODO: guide]
-* Proof-of-concept to show a low latency PC-generated sidetone is possible in 2022.
-* Test latency of your audio devices (e.g. use a recording device to measure the time from mouse click to beep)
-* Start of a general purpose utility, CW hardware and software.
-
-# Motivation
-
-UpSidetone was created so I could practice keying morse code with a straight key connected up to my Windows PC (via a cheap modified USB mouse), without buying specialized hardware (which has high shipping times and costs to my home in Australia). It's basic, but it's now at a point where people other than me might also find a use for it.
-
-Default PC audio typically has too much latency to comfortably listen to your own Morse code as you send it, but this app gives you ways to reduce the latency: choose a better driver, choosing a low sample rate, and reducing the latency setting (aka buffer size). For my hardware, this is plenty to eleminate the need for an expensive radio or ugly sounding practice ossilator. I've only tested with my own hardware (an old Roland Duo Capture, and my motherboard's Realtek ASIO), so your mileage may vary. If you do a bunch of testing on various hardware, please share your results.
-
-# Future plans
-
-The longer term vision for UpSidetone is (apart from making beeps) to bridge physical morse keys/paddles and various Morse software, for example allowing you to use a Morse key with old ms-dos Morse training software (by emulating a serial port for DOSBox), or letting you use your Morse key as a MIDI instrument (or recording to a MIDI file), or giving a low latency sidetone when using a web-based CW chatrooms. So far we don't do any of these things.
-
-In the short term, I'd like to add support for various keying modes (Iambic A + B, Ultimatic, etc). I haven't got a paddle yet so it's just straight key (or cootie) style for now. Also would like to add some QoL features like saving your settings, volume slider, etc.
+![image](https://user-images.githubusercontent.com/800133/197386299-15112019-1427-43cb-86a3-157cfb72e086.png)
 
 # Features:
 
 * Treat various inputs like they're a straight key. Beeps when you:
 
-  * Mouse: Click the button
-  * Keyboard: Press the `ctrl` key or `[`
-  * MIDI instrument: Press any button on a selected MIDI device
-  * Other inputs: please ask.
+  * Mouse: Click the button, or choose a mouse to use in the background
+  * Keyboard (foreground only): left and right ctrl keys; [ and ]; Z and X; left and right arrows
+  * MIDI instrument (works in background): Press any midi key on a selected MIDI device (every second key is a dash)
+  * Serial port: Only tested with a straight key (let me know if it works with your paddle)
+  * Other inputs: feel free to ask
+  * Us the "Flip left/right" if your double paddles are wired backwards etc
+
+* Keyer modes:
+
+  * Straight key (cootie / bug / oscillator)
+  * Iambic A
+  * Iambic B
+  * Cyborg — machine-spaced dits and human controlled dashes. Mix and match them with squeeze insertion; a two-paddle semi-automatic bug-like mode.
+  * Ultimatic
+  * No Repeats  
 
 # Audio devices:
 
-* ASIO support (recommended if available). Supports the various Windows audio output APIs, including ASIO.
+* ASIO or WASAPI recommended. Reduce WASAPI latency with the options button.
+* ASIO support. Supports the various Windows audio output APIs, including ASIO.
 * Choose latency for audio drivers (WaveOut / DirectSound / WASAPI)
 * Automatically chooses the lowest sample rate for the device (Minimum: 8,000 samples/second). 
 
+# Uses
+
+* Practice morse code keying with a straight key
+* Send Morse code over Zoom or Discord to your CW Club [either: 1. Share the app, or 2. Configure VoiceMeeter Banana to mix upSidetone's audio with your mic]
+* Test latency of your audio devices (e.g. use a recording device to measure the time from mouse click to beep)
+* Start of a general purpose utility, CW hardware and software.
+
+# Motivation(s)
+
+There were a number of reasons to create upSidetone. The most basic was to practice keying morse code, which seemed like something that ought to be possible with minimal audio latency, and without purchasing any obsolete hardware (Why hunt for some specific legacy serial port adapter with $30 shipping when you can modify a $5 USB mouse by gluing a headphone jack to it?). Apart from serving as a proof-of-concept (to show a low latency PC-generated sidetone is possible in 2022), it also let me create my ideal keying mode ("Cyborg"), get my head around how Iambic A and B keying modes work on a millisecond scale, and learn the names of all the pins on those serial ports. I also did not want to make this another project that goes silent with its author, so I've open sourced it with a permissive license. 
+
+It's basic, but it's now at a point where people other than me might also find a use for it.
+
+Default PC audio typically has too much latency to comfortably listen to your own Morse code as you send it, but this app gives you ways to reduce the latency: choose a better driver (ASIO or WASAPI recommended), choosing a low sample rate (automatic), and reducing the latency setting aka audio buffer (click the Options or ASIO button). This is plenty to eleminate the need for an expensive radio or ugly sounding practice oscillator. I've only tested with my own hardware, so your mileage may vary. If you do a bunch of testing on various hardware, please share your results.
+
+# Future plans
+
+The longer term vision for UpSidetone is as a general purpose utility to bridge physical morse keys/paddles and various Morse software, for example allowing you to use a Morse key with old ms-dos Morse training software (by emulating a serial port for DOSBox), make recordings, do analysis, or giving a low latency sidetone when using a web-based CW chatrooms.
+
 TODO:
 
-* Set frequency
-* Volume slider
-* Keyer — keying modes — Iambic A + B, Ultimatic, bug, etc
-* More UI/UX — hide debug text, more user messages, etc.
+* Redo UI
 * Preferred sample rate option
 * Save settings
 * Much more in my notes
+
+Releases:
+
+* https://github.com/pengowray/upsidetone/releases

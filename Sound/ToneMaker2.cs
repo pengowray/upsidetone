@@ -140,7 +140,7 @@ namespace upSidetone.Sound {
                     //try again. (risky recursion)
                     //return GetNextLever();
                 }
-                if (lever == LeverKind.PoliteStraight && !StraightDown) {
+                if ((lever == LeverKind.Straight|| lever == LeverKind.PoliteStraight) && !StraightDown) {
                     return new(LeverKind.None, Requiredness.Fill);
                 }
 

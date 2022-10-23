@@ -81,9 +81,12 @@ namespace upSidetone {
             KeyerModeSelect.Items.Add("Straight key");
             KeyerModeSelect.Items.Add("Iambic A");
             KeyerModeSelect.Items.Add("Iambic B");
+            KeyerModeSelect.Items.Add("Cyborg"); // previously called isopod: like a bug but actually not
             KeyerModeSelect.Items.Add("Ultimatic");
-            KeyerModeSelect.Items.Add("Isopoda"); // like a bug but actually not
-            KeyerModeSelect.SelectedIndex = 3; // Ultimatic
+            KeyerModeSelect.Items.Add("Locking");
+            KeyerModeSelect.Items.Add("Bulldozer");
+            KeyerModeSelect.Items.Add("Autorepeat off");
+            KeyerModeSelect.SelectedIndex = 4; // Ultimatic
 
             Volume.Text = "50";
             Frequency.Text = "550";
@@ -118,7 +121,7 @@ namespace upSidetone {
                 SoundGen.Enable();
                 SoundGen.ListenToLevers(Levers);
 
-                //MidiInput?.SetLevers(Sounder);
+                //MidiIntput?.SetLevers(Sounder);
                 //KeyboardInput?.SetSounder(Sounder);
                 //MorseMouses?.SetSounder(Sounder);
 
@@ -356,12 +359,17 @@ namespace upSidetone {
             } else if (KeyerModeSelect.SelectedIndex == 2) {
                 Levers.Mode = KeyerMode.IambicB;
             } else if (KeyerModeSelect.SelectedIndex == 3) {
-                Levers.Mode = KeyerMode.Ultimatic;
+                Levers.Mode = KeyerMode.Cyborg;
             } else if (KeyerModeSelect.SelectedIndex == 4) {
-                Levers.Mode = KeyerMode.Isopoda;
+                Levers.Mode = KeyerMode.Ultimatic;
+            } else if (KeyerModeSelect.SelectedIndex == 5) {
+                Levers.Mode = KeyerMode.Locking;
+            } else if (KeyerModeSelect.SelectedIndex == 6) {
+                Levers.Mode = KeyerMode.Bulldozer;
+            } else if (KeyerModeSelect.SelectedIndex == 7) {
+                Levers.Mode = KeyerMode.NoRepeats;
             }
         }
-
         private void Volume_TextChanged(object sender, TextChangedEventArgs e) {
             if (Volume != null && double.TryParse(Volume.Text, out double result)) {
                 double vol = result / 100.0;

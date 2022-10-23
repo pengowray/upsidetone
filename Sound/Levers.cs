@@ -46,12 +46,13 @@ namespace upSidetone.Sound {
     public enum KeyerMode {
         None,
         StraightKey, // or plain oscillator
-        Isopoda,
-        NoIambic, // aka "no squeeze". ignore second paddle until first released (i guess?) TODO: check how used elsewhere
-        SqueezeMute, // second paddle silences until both released (accessibility) TODO
         IambicA,
         IambicB,
+        Cyborg, // semi-automatic two-paddle "bug" bug not a bug; don't pick this option with a bug
         Ultimatic,
+        NoRepeats, // todo: find a name in the positive
+        Locking, // second paddle silences until both released (accessibility) TODO
+        Bulldozer, //NoIambic, // aka "no squeeze". ignore second paddle until first released (i guess?) TODO: check how "no squeeze" is used elsewhere
         //BestGuess // 
     }
 
@@ -106,7 +107,7 @@ namespace upSidetone.Sound {
                 case KeyerMode.StraightKey:
                     return LeverKind.Straight;
 
-                case KeyerMode.Isopoda:
+                case KeyerMode.Cyborg:
                     if (left) {
                         return LeverKind.Dit;
                     } else {
@@ -115,9 +116,10 @@ namespace upSidetone.Sound {
 
                 case KeyerMode.IambicA:
                 case KeyerMode.IambicB:
-                case KeyerMode.NoIambic:
-                case KeyerMode.SqueezeMute:
+                case KeyerMode.Locking:
+                case KeyerMode.NoRepeats:
                 case KeyerMode.Ultimatic:
+                case KeyerMode.Bulldozer:
                     if (left) {
                         return LeverKind.Dit;
                     } else {
@@ -180,11 +182,16 @@ namespace upSidetone.Sound {
                     fill = RepeatFill(lever);
                 }
 
-                if (Mode == KeyerMode.Isopoda) {
+                if (Mode == KeyerMode.Cyborg) {
                     // defaults are fine
 
                 } else if (Mode == KeyerMode.Ultimatic) {
                     // defaults are fine?
+                } else if (Mode == KeyerMode.Bulldozer) {
+                    if (Down.Any()) {
+                        require = LeverKind.None;
+                        fill = RepeatFill(Down.FirstOrDefault());
+                    }
 
                 } else if (Mode == KeyerMode.IambicA) {
                     if (lever == LeverKind.Dah && Down.Contains(LeverKind.Dit)) {
@@ -203,7 +210,16 @@ namespace upSidetone.Sound {
                         bFill = true;
                         fill = RepeatFill(LeverKind.Dah, LeverKind.Dit);
                     }
+                } else if (Mode == KeyerMode.NoRepeats) {
+                    fill = null;
+                } else if (Mode == KeyerMode.Locking) {
+                    if (Down.Any()) {
+                        require = LeverKind.None;
+                        fill = null;
+                    }
                 }
+
+
                 Down.Add(lever);
             }
             LeverDown?.Invoke(this, lever, require, fill, bFill);
@@ -220,7 +236,7 @@ namespace upSidetone.Sound {
                 return;
             }
 
-            LeverKind[] defaultFill = null; // default fill
+            LeverKind[]? defaultFill = null; // default fill
             KeyerMode mode;
             int pos;
             bool wasLast;
@@ -282,7 +298,17 @@ namespace upSidetone.Sound {
                     LeverUp?.Invoke(this, lever, require, defaultFill);
                     return;
                 }
-            } else if (mode == KeyerMode.Isopoda) {
+            } else if (mode == KeyerMode.Bulldozer) {
+                if (lever == LeverKind.Dit && Down.Contains(LeverKind.Dah)) {
+                    LeverKind require = wasLast ? LeverKind.Dah : LeverKind.None;
+                    LeverUp?.Invoke(this, lever, require, defaultFill);
+                    return;
+                } else if (lever == LeverKind.Dah && Down.Contains(LeverKind.Dit)) {
+                    LeverKind require = wasLast ? LeverKind.Dit : LeverKind.None;
+                    LeverUp?.Invoke(this, lever, require, defaultFill);
+                    return;
+                }
+            } else if (mode == KeyerMode.Cyborg) {
                 if (lever == LeverKind.Dit && Down.Contains(LeverKind.PoliteStraight)) {
                     //var fill = RepeatFill(LeverKind.PoliteStraight, LeverKind.Stop);
                     //LeverUp?.Invoke(this, lever, LeverKind.None, fill);
@@ -295,6 +321,10 @@ namespace upSidetone.Sound {
                     LeverUp?.Invoke(this, lever, require, defaultFill);
                     return;
                 }
+            } else if (mode == KeyerMode.NoRepeats) {
+                defaultFill = null;
+            } else if (Mode == KeyerMode.Locking) {
+                defaultFill = null;
             }
 
             LeverUp?.Invoke(this, lever, LeverKind.None, defaultFill);

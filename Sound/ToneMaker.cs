@@ -30,7 +30,7 @@ namespace upSidetone.Sound
         const double wpm = 12.0;
         double ditSeconds = 60.0 / (50.0 * wpm);
 
-        KeyerMode KeyerMode = KeyerMode.Isopoda;
+        KeyerMode KeyerMode = KeyerMode.Cyborg;
 
         AudioOut AudioOut;
         public WaveFormat? Format => AudioOut?.Format;

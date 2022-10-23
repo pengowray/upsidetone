@@ -22,14 +22,18 @@ namespace upSidetone.InputDevices {
 
             if (e.IsDown) {
                 if (e.Key == Key.LeftCtrl || e.Key == Key.OemOpenBrackets || e.Key == Key.Z || e.Key == Key.Left) {
+                    e.Handled = true;
                     Levers?.PushLeverDown(VirtualLever.Left);
                 } else if (e.Key == Key.RightCtrl || e.Key == Key.OemCloseBrackets || e.Key == Key.X || e.Key == Key.Right) {
+                    e.Handled = true;
                     Levers?.PushLeverDown(VirtualLever.Right);
                 }
             } else if (e.IsUp) {
                 if (e.Key == Key.LeftCtrl || e.Key == Key.OemOpenBrackets || e.Key == Key.Z || e.Key == Key.Left) {
+                    e.Handled = true;
                     Levers?.ReleaseLever(VirtualLever.Left);
                 } else if (e.Key == Key.RightCtrl || e.Key == Key.OemCloseBrackets || e.Key == Key.X || e.Key == Key.Right) {
+                    e.Handled = true;
                     Levers?.ReleaseLever(VirtualLever.Right);
                 }
             }

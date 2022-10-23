@@ -45,14 +45,15 @@ namespace upSidetone.Sound {
 
     public enum KeyerMode {
         None,
-        StraightKey, // or plain oscillator
+        StraightKey, // or plain oscillator; for cooties / sideswipers / bugs
         IambicA,
         IambicB,
-        Cyborg, // semi-automatic two-paddle "bug" bug not a bug; don't pick this option with a bug
+        Cyborg, // semi-automatic two-paddle "bug" — bug not a bug; don't pick this option with a bug
         Ultimatic,
         NoRepeats, // todo: find a name in the positive
-        Locking, // second paddle silences until both released (accessibility) TODO
-        Bulldozer, //NoIambic, // aka "no squeeze". ignore second paddle until first released (i guess?) TODO: check how "no squeeze" is used elsewhere
+        Locking, // second paddle silences (locks up) until both released (possibly a useful accessibility mode)
+        LockingCyborg,
+        Bulldozer, // ignore second paddle until first released. Does not seem overly useful. TODO: inspired by the name "no squeeze" but I don't know how that term is used elsewhere
         //BestGuess // 
     }
 
@@ -108,6 +109,7 @@ namespace upSidetone.Sound {
                     return LeverKind.Straight;
 
                 case KeyerMode.Cyborg:
+                case KeyerMode.LockingCyborg:
                     if (left) {
                         return LeverKind.Dit;
                     } else {
@@ -217,7 +219,13 @@ namespace upSidetone.Sound {
                         require = LeverKind.None;
                         fill = null;
                     }
+                } else if (Mode == KeyerMode.LockingCyborg) {
+                    if (Down.Any()) {
+                        require = LeverKind.None;
+                        fill = null;
+                    }
                 }
+
 
 
                 Down.Add(lever);
@@ -313,7 +321,7 @@ namespace upSidetone.Sound {
                     //var fill = RepeatFill(LeverKind.PoliteStraight, LeverKind.Stop);
                     //LeverUp?.Invoke(this, lever, LeverKind.None, fill);
                     // note: required lever should not be started if straight key released
-                    LeverKind require = wasLast ? LeverKind.PoliteStraight: LeverKind.None;
+                    LeverKind require = wasLast ? LeverKind.PoliteStraight : LeverKind.None;
                     LeverUp?.Invoke(this, lever, require, null);
                     return;
                 } else if (lever == LeverKind.PoliteStraight && Down.Contains(LeverKind.Dit)) {
@@ -324,6 +332,8 @@ namespace upSidetone.Sound {
             } else if (mode == KeyerMode.NoRepeats) {
                 defaultFill = null;
             } else if (Mode == KeyerMode.Locking) {
+                defaultFill = null;
+            } else if (Mode == KeyerMode.LockingCyborg) {
                 defaultFill = null;
             }
 

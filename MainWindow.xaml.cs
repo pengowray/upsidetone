@@ -83,9 +83,11 @@ namespace upSidetone {
             KeyerModeSelect.Items.Add("Iambic B");
             KeyerModeSelect.Items.Add("Cyborg"); // previously called isopod: like a bug but actually not
             KeyerModeSelect.Items.Add("Ultimatic");
-            KeyerModeSelect.Items.Add("Locking");
-            KeyerModeSelect.Items.Add("Bulldozer");
             KeyerModeSelect.Items.Add("Autorepeat off");
+            //KeyerModeSelect.Items.Add("Locking");
+            //KeyerModeSelect.Items.Add("Locking Cyborg");
+            //KeyerModeSelect.Items.Add("Bulldozer");
+
             KeyerModeSelect.SelectedIndex = 4; // Ultimatic
 
             Volume.Text = "50";
@@ -306,6 +308,13 @@ namespace upSidetone {
 
         private void Grid_PreviewKeyDown(object sender, KeyEventArgs e) {
             KeyboardInput?.KeyEvent(e);
+            if (e.Key == Key.F12 && !e.Handled && KeyerModeSelect.Items.Count < 8) {
+                string tag = " (experimental)";
+                KeyerModeSelect.Items.Add("Locking" + tag);
+                KeyerModeSelect.Items.Add("Locking Cyborg" + tag);
+                KeyerModeSelect.Items.Add("Bulldozer" + tag);
+                e.Handled = true;
+            }
         }
 
         private void Grid_PreviewKeyUp(object sender, KeyEventArgs e) {
@@ -363,13 +372,16 @@ namespace upSidetone {
             } else if (KeyerModeSelect.SelectedIndex == 4) {
                 Levers.Mode = KeyerMode.Ultimatic;
             } else if (KeyerModeSelect.SelectedIndex == 5) {
-                Levers.Mode = KeyerMode.Locking;
-            } else if (KeyerModeSelect.SelectedIndex == 6) {
-                Levers.Mode = KeyerMode.Bulldozer;
-            } else if (KeyerModeSelect.SelectedIndex == 7) {
                 Levers.Mode = KeyerMode.NoRepeats;
+            } else if (KeyerModeSelect.SelectedIndex == 6) {
+                Levers.Mode = KeyerMode.Locking;
+            } else if (KeyerModeSelect.SelectedIndex == 7) {
+                Levers.Mode = KeyerMode.LockingCyborg;
+            } else if (KeyerModeSelect.SelectedIndex == 8) {
+                Levers.Mode = KeyerMode.Bulldozer;
             }
         }
+
         private void Volume_TextChanged(object sender, TextChangedEventArgs e) {
             if (Volume != null && double.TryParse(Volume.Text, out double result)) {
                 double vol = result / 100.0;

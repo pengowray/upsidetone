@@ -7,68 +7,89 @@ using System.IO.Ports;
 using System.Text.RegularExpressions;
 using System.Diagnostics;
 using upSidetone.Sound;
+using System.Net;
 
 namespace upSidetone.InputDevices {
 
-    public class PaddleSerialPort : IDisposable {
-        string Name;
-        private SerialPort Port;
-        Levers Levers;
-        private bool disposedValue;
-        
+    public class VirtualSerialPort : IDisposable {
+        public string PortName { get; private set; }
+        private SerialPort? Port;
+        private Levers Levers;
 
-        public PaddleSerialPort(string name, Levers levers) {
-            Name = name;
+        public bool DtrNormallyHigh = false;
+        public bool RtsNormallyHigh = true;
+
+        private bool disposedValue;
+
+        public VirtualSerialPort(string portname, Levers levers) {
+            PortName = portname;
             Levers = levers;
         }
 
         public void Enable() {
             try {
-                Port = new SerialPort(Name);
+                Port = new SerialPort(PortName);
                 Port.Handshake = Handshake.None;
-                //Port = new SerialPort(Name, 300, Parity.None, 8); // commented out: don't need to pretend to set it up for data
-                Port.PinChanged += Port_PinChanged;
-                Port.ErrorReceived += Port_ErrorReceived;
                 Port.Open();
-                UpdatePiano("");
-                Debug.WriteLine($"Port {Port.PortName} open: {Port.IsOpen}. handshake:{Port.Handshake}");
+                //UpdatePiano("");
+                Debug.WriteLine($"Virtual Port {Port.PortName} open: {Port.IsOpen}. handshake:{Port.Handshake}");
+
+                Levers.LeverDown += Levers_LeverDown;
+                Levers.LeverUp += Levers_LeverUp;
+
+                Port.DtrEnable = false;
+                Port.RtsEnable = false;
 
             } catch (Exception e) {
                 // eg: "failed to open port: COM5 / System.UnauthorizedAccessException: 'Access to the path 'COM5' is denied.'"
                 Debug.WriteLine($"failed to open port: {Port?.PortName} / {e.GetType()}: '{e.Message}'");
                 // eg: "COM5: 'Access to the path 'COM5' is denied.'" (when in use by another application or instance)
-                UpdatePiano($"{Port?.PortName}: '{e.Message}'");
+                //UpdatePiano($"{Port?.PortName}: '{e.Message}'");
             }
+        }
+
+        private void Levers_LeverUp(Levers levers, LeverKind lever, LeverKind require, LeverKind[]? fill, bool bFill = false) {
+            // pass through mode
+            // TODO: for pass through mode, really should be subscribing to the plain lever events, not as filtered as this
+
+            if (Port == null || !Port.IsOpen)
+                return;
+
+            // DSR (6) <-> DTR (4)
+            // RTS (7) <-> CTS (8)
+            if (lever == LeverKind.Dit || lever == LeverKind.PoliteStraight || lever == LeverKind.Straight) {
+                Port.DtrEnable = DtrNormallyHigh;
+            } else if (lever == LeverKind.Dah) {
+                Port.RtsEnable = RtsNormallyHigh;
+            }
+        }
+
+        private void Levers_LeverDown(Levers levers, LeverKind lever, LeverKind require, LeverKind[]? fill, bool bFill = false) {
+            if (Port == null || !Port.IsOpen)
+                return;
+
+            if (lever == LeverKind.Dit || lever == LeverKind.PoliteStraight || lever == LeverKind.Straight) {
+                Port.DtrEnable = !DtrNormallyHigh;
+            } else if (lever == LeverKind.Dah) {
+                Port.RtsEnable = !RtsNormallyHigh;
+            }
+        }
+
+        public void ResetPins() {
+            // after changing config settings, reset pins to normal state
+            if (Port == null || !Port.IsOpen)
+                return;
+
+            Port.DtrEnable = DtrNormallyHigh;
+            Port.RtsEnable = RtsNormallyHigh;
         }
 
         private void Port_ErrorReceived(object sender, SerialErrorReceivedEventArgs e) {
-            Debug.WriteLine($"port error: {e.EventType}.");
-            UpdatePianoTwice(e.EventType.ToString());
+            //Debug.WriteLine($"port error: {e.EventType}.");
+            //UpdatePianoTwice(e.EventType.ToString());
         }
 
-        private void Port_PinChanged(object sender, SerialPinChangedEventArgs e) {
-            if (e.EventType.HasFlag(SerialPinChange.CtsChanged)) {
-                var down = Port?.CtsHolding ?? false;
-                if (down) {
-                    Levers?.PushLeverDown(VirtualLever.Left);
-                } else {
-                    Levers?.ReleaseLever(VirtualLever.Left);
-                }
-            }
-
-            if (e.EventType.HasFlag(SerialPinChange.DsrChanged)) {
-                var down = Port?.DsrHolding ?? false;
-                if (down) {
-                    Levers?.PushLeverDown(VirtualLever.Right);
-                } else {
-                    Levers?.ReleaseLever(VirtualLever.Right);
-                }
-            }
-
-            Debug.WriteLine($"pin changed: {e.EventType}. [{string.Join(" ", ActivePins())}]");
-            UpdatePianoTwice($"{e.EventType.ToString()}"); // e.g. "COM12: Open CtsChanged"
-        }
-
+        
         int UpdateTickets = 0;
         void UpdatePianoTwice(string also = "") {
 
@@ -86,16 +107,17 @@ namespace upSidetone.InputDevices {
                 }
             });
         }
-
         void UpdatePiano(string also = "") {
             if (Port != null && Port.IsOpen) {
                 var pianoText = $"{Port.PortName}: " + string.Join(" ", ActivePins().Append(also));
-                MainWindow.Me?.PortPinsPianoUpdate(pianoText);
+                MainWindow.Me?.VPortPinsPianoUpdate(pianoText);
             } else {
                 // "also" is likely an error
-                MainWindow.Me?.PortPinsPianoUpdate(also);
+                MainWindow.Me?.VPortPinsPianoUpdate(also);
             }
         }
+        
+
         IEnumerable<string> ActivePins() {
             if (Port != null) {
                 //if (Port.IsOpen) yield return "Open"; // when open, show the port name (no need to say "Open")
@@ -105,14 +127,6 @@ namespace upSidetone.InputDevices {
                 if (Port.DtrEnable) yield return "DTR";
                 if (Port.RtsEnable) yield return "RTS";
                 if (Port.BytesToRead > 0) yield return $"[{Port.BytesToRead} bytes to read]";
-            }
-        }
-
-        public static IEnumerable<string> GetPortNames() {
-            yield return "(none)";
-            var myComparer = new NaturalComparer();
-            foreach (var name in SerialPort.GetPortNames().OrderBy(s => s, myComparer)) {
-                yield return name;
             }
         }
 
@@ -126,7 +140,6 @@ namespace upSidetone.InputDevices {
 
                 // TODO: free unmanaged resources (unmanaged objects) and override finalizer
                 // set large fields to null
-                Levers = null;
                 disposedValue = true;
             }
         }
@@ -142,26 +155,6 @@ namespace upSidetone.InputDevices {
             // Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
             Dispose(disposing: true);
             GC.SuppressFinalize(this);
-        }
-    }
-
-
-    public class NaturalComparer : IComparer<string> {
-        //via: https://stackoverflow.com/a/9989709/
-        public int Compare(string x, string y) {
-            var regex = new Regex(@"(\d+)");
-
-            // run the regex on both strings
-            var xRegexResult = regex.Match(x);
-            var yRegexResult = regex.Match(y);
-
-            // check if they are both numbers
-            if (xRegexResult.Success && yRegexResult.Success) {
-                return int.Parse(xRegexResult.Groups[1].Value).CompareTo(int.Parse(yRegexResult.Groups[1].Value));
-            }
-
-            // otherwise return as string comparison
-            return x.CompareTo(y);
         }
     }
 }

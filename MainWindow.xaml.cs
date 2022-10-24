@@ -36,7 +36,9 @@ namespace upSidetone {
         MidiInput MidiInput;
         KeyboardInputWPF KeyboardInput;
         MorseMouses MorseMouses;
-        PaddleSerialPort Port;
+        SerialPortReader Port;
+        VirtualSerialPort VPort;
+
 
         private bool disposedValue;
 
@@ -81,11 +83,11 @@ namespace upSidetone {
             KeyerModeSelect.Items.Add("Straight key");
             KeyerModeSelect.Items.Add("Iambic A");
             KeyerModeSelect.Items.Add("Iambic B");
-            KeyerModeSelect.Items.Add("Cyborg"); // previously called isopod: like a bug but actually not
+            KeyerModeSelect.Items.Add("Hopper (bug-like)"); // previously called Cyborg (half human, half machine); isopod: like a bug but actually not
             KeyerModeSelect.Items.Add("Ultimatic");
             KeyerModeSelect.Items.Add("Autorepeat off");
             //KeyerModeSelect.Items.Add("Locking");
-            //KeyerModeSelect.Items.Add("Locking Cyborg");
+            //KeyerModeSelect.Items.Add("Locking Hopper");
             //KeyerModeSelect.Items.Add("Bulldozer");
 
             KeyerModeSelect.SelectedIndex = 4; // Ultimatic
@@ -97,13 +99,15 @@ namespace upSidetone {
 
             SoundGen?.SetGain(0.5);
 
-            foreach (var device in PaddleSerialPort.GetPortNames()) {
+            foreach (var device in SerialPortReader.GetPortNames()) {
                 SerialPorts.Items.Add(device);
             }
             SerialPorts.SelectedIndex = 0;
 
-            SerialPortSetup.Items.Add("CTS + DSR");
-            SerialPortSetup.SelectedIndex = 0;
+            foreach (var device in SerialPortReader.GetPortNames()) { // yes, use names from SerialPortReader
+                VSerialPorts.Items.Add(device);
+            }
+            VSerialPorts.SelectedIndex = 0;
 
             Debug.WriteLine("...hello.");
 
@@ -120,6 +124,12 @@ namespace upSidetone {
                 SoundGen?.StopListeningToLevers(Levers); // remove old
                 SoundGen?.Dispose();
                 SoundGen = new ToneMaker(AudioOut);
+
+                // restore settings (bit kludgy)
+                Volume_TextChanged(null, null);
+                Frequency_TextChanged(null, null);
+                WPM_TextChanged(null, null);
+
                 SoundGen.Enable();
                 SoundGen.ListenToLevers(Levers);
 
@@ -311,8 +321,9 @@ namespace upSidetone {
             if (e.Key == Key.F12 && !e.Handled && KeyerModeSelect.Items.Count < 8) {
                 string tag = " (experimental)";
                 KeyerModeSelect.Items.Add("Locking" + tag);
-                KeyerModeSelect.Items.Add("Locking Cyborg" + tag);
-                KeyerModeSelect.Items.Add("Bulldozer" + tag);
+                KeyerModeSelect.Items.Add("Locking Hopper" + tag);
+                KeyerModeSelect.Items.Add("Swamp" + tag);
+
                 e.Handled = true;
             }
         }
@@ -432,14 +443,35 @@ namespace upSidetone {
             try {
                 Debug.WriteLine("Port connection attempt...");
 
-                Port = new PaddleSerialPort(selected, Levers);
+                Port = new SerialPortReader(selected, Levers);
                 Port.Enable();
                 Debug.WriteLine("Port connected: " + selected);
                 arg.Handled = true;
             } catch (Exception e) {
                 Debug.WriteLine("Port connect failed: " + selected + " " + e.GetType() + ": " + e.Message);
             }
+        }
 
+        private void VSerialPorts_SelectionChanged(object sender, SelectionChangedEventArgs arg) {
+            VPort?.Dispose();
+            var selected = VSerialPorts.SelectedValue as string;
+            if (selected == null || selected == "(none)") {
+                VPort?.Dispose();
+                VPortPinsPianoUpdate("");
+                return;
+            }
+
+            try {
+                Debug.WriteLine("VPort connection attempt...");
+
+                VPort = new VirtualSerialPort(selected, Levers);
+                VPort.RtsNormallyHigh = RTSHighCheckbox.IsChecked ?? VPort.RtsNormallyHigh;
+                VPort.Enable();
+                Debug.WriteLine("VPort connected: " + selected);
+                arg.Handled = true;
+            } catch (Exception e) {
+                Debug.WriteLine("VPort connect failed: " + selected + " " + e.GetType() + ": " + e.Message);
+            }
         }
 
         public void PortPinsPianoUpdate(string text) {
@@ -449,6 +481,22 @@ namespace upSidetone {
             this.Dispatcher.Invoke(() => {
                 if (SerialPortPianoText != null) SerialPortPianoText.Text = text;
             });
+        }
+
+        public void VPortPinsPianoUpdate(string text) {
+            if (VSerialPortPianoText == null) return;
+
+            //if (InvokeRequired) 
+            this.Dispatcher.Invoke(() => {
+                if (VSerialPortPianoText != null) VSerialPortPianoText.Text = text;
+            });
+        }
+
+        private void RTSHighCheckbox_Checked(object sender, RoutedEventArgs e) {
+            if (VPort != null) { 
+                VPort.RtsNormallyHigh = RTSHighCheckbox.IsChecked ?? VPort.RtsNormallyHigh;
+                VPort.ResetPins();
+            }
         }
     }
 }

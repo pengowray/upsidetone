@@ -6,7 +6,7 @@
         xmlns:local="clr-namespace:upSidetone"
         mc:Ignorable="d"
         Title="upSidetone by Pengo" Height="610" Width="800">
-    <Grid PreviewKeyDown="Grid_PreviewKeyDown" PreviewKeyUp="Grid_PreviewKeyUp" LostFocus="Grid_LostFocus">
+    <Grid PreviewKeyDown="Grid_PreviewKeyDown" PreviewKeyUp="Grid_PreviewKeyUp" LostFocus="Grid_LostFocus" Margin="-8,22,8,-22">
         <ComboBox Name="AudioOutputSelect" HorizontalAlignment="Left" Margin="25,45,0,0" VerticalAlignment="Top" Width="360" RenderTransformOrigin="-0.042,0.457" Height="32" SelectionChanged="AudioOutputSelect_SelectionChanged"/>
         <Button Content="Key" HorizontalAlignment="Left" Height="70" Margin="25,459,0,0" VerticalAlignment="Top" Width="360" Click="Button_Click" PreviewMouseLeftButtonDown="Button_MouseDown" PreviewMouseLeftButtonUp="Button_MouseUp" MouseDown="Button_MouseDown" MouseUp="Button_MouseUp" MouseLeave="Button_MouseLeave" MouseEnter="Button_MouseEnter"/>
         <Label Content="Audio output device" HorizontalAlignment="Left" Height="30" Margin="25,10,0,0" VerticalAlignment="Top" Width="245"/>
@@ -64,10 +64,8 @@
         <CheckBox Name="Flipped" Content="Flip left/right" HorizontalAlignment="Left" Height="20" Margin="510,210,0,0" VerticalAlignment="Top" Width="135" Checked="Flipped_Checked" Unchecked="Flipped_Checked"/>
         <Label Content="Inputs:" HorizontalAlignment="Left" Margin="425,203,0,0" VerticalAlignment="Top" Height="32" Width="80"/>
         <Label Content="Hz" HorizontalAlignment="Left" Margin="605,97,0,0" VerticalAlignment="Top" Height="32" Width="80"/>
-        <Label Content="Serial port keyer:" HorizontalAlignment="Left" Height="30" Margin="425,266,0,0" VerticalAlignment="Top" Width="245"/>
+        <Label Content="Serial port input: (CTS/DSR)" HorizontalAlignment="Left" Height="30" Margin="425,266,0,0" VerticalAlignment="Top" Width="245"/>
         <ComboBox Name="SerialPorts" HorizontalAlignment="Left" Margin="425,296,0,0" VerticalAlignment="Top" Width="275" Height="33" SelectionChanged="SerialPorts_SelectionChanged" />
-        <Label Content="Serial port setup:" HorizontalAlignment="Left" Height="30" Margin="425,385,0,0" VerticalAlignment="Top" Width="245"/>
-        <ComboBox Name="SerialPortSetup" HorizontalAlignment="Left" Margin="425,415,0,0" VerticalAlignment="Top" Width="275" Height="32" />
         <TextBox x:Name ="SerialPortPianoText" Height="30" Margin="425,334,100,0" VerticalAlignment="Top">
             <TextBox.Style>
                 <Style TargetType="{x:Type TextBox}">
@@ -77,6 +75,18 @@
                 </Style>
             </TextBox.Style>
         </TextBox>
+        <Label Content="Virtual straight key out:" HorizontalAlignment="Left" Height="30" Margin="425,471,0,0" VerticalAlignment="Top" Width="175"/>
+        <ComboBox Name="VSerialPorts" HorizontalAlignment="Left" Margin="425,501,0,0" VerticalAlignment="Top" Width="275" Height="33" SelectionChanged="VSerialPorts_SelectionChanged" />
+        <TextBox Name ="VSerialPortPianoText" Height="30" Margin="425,539,100,0" VerticalAlignment="Top">
+            <TextBox.Style>
+                <Style TargetType="{x:Type TextBox}">
+                    <Setter Property="IsReadOnly" Value="True" />
+                    <Setter Property="BorderThickness" Value="0" />
+                    <Setter Property="TextWrapping" Value="Wrap" />
+                </Style>
+            </TextBox.Style>
+        </TextBox>
+        <CheckBox Name="RTSHighCheckbox" Content="RTS High" HorizontalAlignment="Left" Margin="614,477,0,0" VerticalAlignment="Top" RenderTransformOrigin="0.21,0.003" Checked="RTSHighCheckbox_Checked"/>
 
     </Grid>
 </Window>

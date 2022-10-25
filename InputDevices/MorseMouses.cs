@@ -75,7 +75,7 @@ namespace upSidetone.InputDevices {
             Mouses.Add(ALL_LABEL);
             for (uint i = 0; i < mice; i++) {
                 //TODO: only include a number if there's more than one with the same name
-                string name = $"({i}) {DeviceName(i)}"; 
+                string name = $"#{i} {DeviceName(i)}"; 
                 Mouses.Add(name);
                 WriteLine(name);
             }
@@ -111,7 +111,7 @@ namespace upSidetone.InputDevices {
                                         Levers?.ReleaseLever(VirtualLever.Right);
                                     }
                                 }
-                                WriteLine($"({mme.device}) {DeviceName(mme.device)} Button {mme.item}: {(mme.value == 1 ? "Down" : "Up")}");
+                                WriteLine($"#{mme.device} {DeviceName(mme.device)} Button {mme.item}: {(mme.value == 1 ? "Down" : "Up")}");
                                 //TODO: paste the text and flag another thread get around to sending it to the UI
                                 //Task message = Task.Run(() => 
                                 //    Piano = $"({mme.device}) {DeviceName(mme.device)} Button {mme.item}: {(mme.value == 1 ? "Down" : "Up")}";

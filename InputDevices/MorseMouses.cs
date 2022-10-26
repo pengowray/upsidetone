@@ -111,11 +111,14 @@ namespace upSidetone.InputDevices {
                                         Levers?.ReleaseLever(VirtualLever.Right);
                                     }
                                 }
-                                WriteLine($"#{mme.device} {DeviceName(mme.device)} Button {mme.item}: {(mme.value == 1 ? "Down" : "Up")}");
+                                //TODO: track multiple mouse buttons
                                 //TODO: paste the text and flag another thread get around to sending it to the UI
-                                //Task message = Task.Run(() => 
-                                //    Piano = $"({mme.device}) {DeviceName(mme.device)} Button {mme.item}: {(mme.value == 1 ? "Down" : "Up")}";
-                                //);
+                                if (mme.value == 1) {
+                                    //WriteLine($"#{mme.device} {DeviceName(mme.device)} Button {mme.item}: {(mme.value == 1 ? "Down" : "Up")}");
+                                    WriteLine($"#{mme.device} {DeviceName(mme.device)} Button {mme.item}");
+                                } else {
+                                    WriteLine("");
+                                }
 
                             }
 

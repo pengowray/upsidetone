@@ -75,7 +75,7 @@
                 </Style>
             </TextBox.Style>
         </TextBox>
-        <Label Content="Virtual straight key out:" HorizontalAlignment="Left" Height="30" Margin="428,425,0,0" VerticalAlignment="Top" Width="175"/>
+        <Label Content="Virtual paddles pass-thru:" HorizontalAlignment="Left" Height="30" Margin="428,425,0,0" VerticalAlignment="Top" Width="175"/>
         <ComboBox Name="VSerialPorts" HorizontalAlignment="Left" Margin="428,455,0,0" VerticalAlignment="Top" Width="275" Height="33" SelectionChanged="VSerialPorts_SelectionChanged" />
         <TextBox Name ="VSerialPortPianoText" Height="30" Margin="428,493,20,0" VerticalAlignment="Top">
             <TextBox.Style>

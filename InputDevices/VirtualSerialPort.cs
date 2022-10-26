@@ -89,6 +89,8 @@ namespace upSidetone.InputDevices {
             } else if (lever == LeverKind.Dah) {
                 Port.RtsEnable = !RtsNormallyHigh;
             }
+
+            UpdatePianoTwice($"");
         }
 
         public void ResetPins() {
@@ -98,6 +100,8 @@ namespace upSidetone.InputDevices {
 
             Port.DtrEnable = DtrNormallyHigh;
             Port.RtsEnable = RtsNormallyHigh;
+
+            UpdatePianoTwice($"");
         }
 
         private void Port_ErrorReceived(object sender, SerialErrorReceivedEventArgs e) {

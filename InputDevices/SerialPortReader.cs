@@ -13,6 +13,9 @@ namespace upSidetone.InputDevices {
     // attempt to read morse on pins of a serial port.
 
     public class SerialPortReader : IDisposable {
+
+        //TODO: reduce duplicated code with VirtualSerialPort 
+
         public string PortName { get; private set; }
         private SerialPort? Port;
         private Levers Levers;
@@ -54,10 +57,16 @@ namespace upSidetone.InputDevices {
 
 
             } catch (Exception e) {
-                // eg: "failed to open port: COM5 / System.UnauthorizedAccessException: 'Access to the path 'COM5' is denied.'"
+
                 Debug.WriteLine($"Failed to open port: {Port?.PortName} / {e.GetType()}: '{e.Message}'");
-                // eg: "COM5: 'Access to the path 'COM5' is denied.'" (when in use by another application or instance)
-                UpdatePiano($"{Port?.PortName}: '{e.Message}'");
+                if (PortName != null && !PortName.StartsWith("COM", StringComparison.OrdinalIgnoreCase)) {
+                    // eg: "CNCA0: 'The given port name (CNCA0) does not resolve to a valid serial port. (Parameter 'portName')'"
+                    // discussion: https://web.archive.org/web/20221026061825/https://www.pcreview.co.uk/threads/problem-with-system-io-ports-serialport-open.2907727/
+                    UpdatePiano($"{Port?.PortName} Error: Microsoft's System.IO.Ports does not support port names which do not start with 'COM'. '{e.Message}'");
+                } else {
+                    // eg: "COM5: 'Access to the path 'COM5' is denied.'" (when in use by another application or instance)
+                    UpdatePiano($"{Port?.PortName} Error: '{e.Message}'");
+                }
             }
         }
 

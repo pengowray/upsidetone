@@ -48,12 +48,12 @@ namespace upSidetone.Sound {
         StraightKey, // or plain oscillator; for cooties / sideswipers / bugs
         IambicA,
         IambicB,
-        Cyborg, // semi-automatic two-paddle "bug" — bug not a bug; don't pick this option with a bug
+        Hybrid, // semi-automatic two-paddle "bug" — bug not a bug; don't pick this option with a bug
         Ultimatic,
         NoRepeats, // todo: find a name in the positive
         Locking, // second paddle silences (locks up) until both released (possibly a useful accessibility mode)
-        LockingCyborg,
-        Bulldozer, // ignore second paddle until first released. Does not seem overly useful. TODO: inspired by the name "no squeeze" but I don't know how that term is used elsewhere
+        HybridLocking,
+        Swamp, // ignore second paddle until first released. Does not seem overly useful.
         //BestGuess // 
     }
 
@@ -108,8 +108,8 @@ namespace upSidetone.Sound {
                 case KeyerMode.StraightKey:
                     return LeverKind.Straight;
 
-                case KeyerMode.Cyborg:
-                case KeyerMode.LockingCyborg:
+                case KeyerMode.Hybrid:
+                case KeyerMode.HybridLocking:
                     if (left) {
                         return LeverKind.Dit;
                     } else {
@@ -121,7 +121,7 @@ namespace upSidetone.Sound {
                 case KeyerMode.Locking:
                 case KeyerMode.NoRepeats:
                 case KeyerMode.Ultimatic:
-                case KeyerMode.Bulldozer:
+                case KeyerMode.Swamp:
                     if (left) {
                         return LeverKind.Dit;
                     } else {
@@ -184,12 +184,12 @@ namespace upSidetone.Sound {
                     fill = RepeatFill(lever);
                 }
 
-                if (Mode == KeyerMode.Cyborg) {
+                if (Mode == KeyerMode.Hybrid) {
                     // defaults are fine
 
                 } else if (Mode == KeyerMode.Ultimatic) {
                     // defaults are fine?
-                } else if (Mode == KeyerMode.Bulldozer) {
+                } else if (Mode == KeyerMode.Swamp) {
                     if (Down.Any()) {
                         require = LeverKind.None;
                         fill = RepeatFill(Down.FirstOrDefault());
@@ -219,7 +219,7 @@ namespace upSidetone.Sound {
                         require = LeverKind.None;
                         fill = null;
                     }
-                } else if (Mode == KeyerMode.LockingCyborg) {
+                } else if (Mode == KeyerMode.HybridLocking) {
                     if (Down.Any()) {
                         require = LeverKind.None;
                         fill = null;
@@ -306,7 +306,7 @@ namespace upSidetone.Sound {
                     LeverUp?.Invoke(this, lever, require, defaultFill);
                     return;
                 }
-            } else if (mode == KeyerMode.Bulldozer) {
+            } else if (mode == KeyerMode.Swamp) {
                 if (lever == LeverKind.Dit && Down.Contains(LeverKind.Dah)) {
                     LeverKind require = wasLast ? LeverKind.Dah : LeverKind.None;
                     LeverUp?.Invoke(this, lever, require, defaultFill);
@@ -316,7 +316,7 @@ namespace upSidetone.Sound {
                     LeverUp?.Invoke(this, lever, require, defaultFill);
                     return;
                 }
-            } else if (mode == KeyerMode.Cyborg) {
+            } else if (mode == KeyerMode.Hybrid) {
                 if (lever == LeverKind.Dit && Down.Contains(LeverKind.PoliteStraight)) {
                     //var fill = RepeatFill(LeverKind.PoliteStraight, LeverKind.Stop);
                     //LeverUp?.Invoke(this, lever, LeverKind.None, fill);
@@ -333,7 +333,7 @@ namespace upSidetone.Sound {
                 defaultFill = null;
             } else if (Mode == KeyerMode.Locking) {
                 defaultFill = null;
-            } else if (Mode == KeyerMode.LockingCyborg) {
+            } else if (Mode == KeyerMode.HybridLocking) {
                 defaultFill = null;
             }
 

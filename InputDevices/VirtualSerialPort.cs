@@ -40,11 +40,18 @@ namespace upSidetone.InputDevices {
                 Port.DtrEnable = false;
                 Port.RtsEnable = false;
 
+                if (Port != null && Port.IsOpen) {
+                    UpdatePiano("Connected");
+                    string txt = $"VPORT {Port?.PortName}: Connected";
+                    Debug.WriteLine(txt);
+                }
+
             } catch (Exception e) {
                 // eg: "failed to open port: COM5 / System.UnauthorizedAccessException: 'Access to the path 'COM5' is denied.'"
-                Debug.WriteLine($"failed to open port: {Port?.PortName} / {e.GetType()}: '{e.Message}'");
+                Debug.WriteLine($"failed to open vport: {Port?.PortName} / {e.GetType()}: '{e.Message}'");
                 // eg: "COM5: 'Access to the path 'COM5' is denied.'" (when in use by another application or instance)
-                //UpdatePiano($"{Port?.PortName}: '{e.Message}'");
+                // eg: "CNCA0: 'The given port name (CNCA0) does not resolve to a valid serial port. (Parameter 'portName')'"
+                UpdatePiano($"{Port?.PortName}: '{e.Message}'");
             }
         }
 

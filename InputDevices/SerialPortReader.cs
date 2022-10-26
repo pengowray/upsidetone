@@ -47,8 +47,8 @@ namespace upSidetone.InputDevices {
                 DsrNormallyHigh = Port?.DsrHolding ?? DsrNormallyHigh;
 
                 if (Port != null && Port.IsOpen) {
+                    UpdatePiano("Connected");
                     string txt = $"{Port?.PortName}: Connected";
-                    UpdatePiano(txt);
                     Debug.WriteLine(txt);
                 }
 
@@ -128,14 +128,6 @@ namespace upSidetone.InputDevices {
             }
         }
 
-        public static IEnumerable<string> GetPortNames() {
-            yield return "(none)";
-            var myComparer = new NaturalComparer();
-            foreach (var name in SerialPort.GetPortNames().OrderBy(s => s, myComparer)) {
-                yield return name;
-            }
-        }
-
         protected virtual void Dispose(bool disposing) {
             if (!disposedValue) {
                 if (disposing) {
@@ -166,22 +158,4 @@ namespace upSidetone.InputDevices {
     }
 
 
-    public class NaturalComparer : IComparer<string> {
-        //via: https://stackoverflow.com/a/9989709/
-        public int Compare(string x, string y) {
-            var regex = new Regex(@"(\d+)");
-
-            // run the regex on both strings
-            var xRegexResult = regex.Match(x);
-            var yRegexResult = regex.Match(y);
-
-            // check if they are both numbers
-            if (xRegexResult.Success && yRegexResult.Success) {
-                return int.Parse(xRegexResult.Groups[1].Value).CompareTo(int.Parse(yRegexResult.Groups[1].Value));
-            }
-
-            // otherwise return as string comparison
-            return x.CompareTo(y);
-        }
-    }
 }

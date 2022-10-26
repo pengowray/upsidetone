@@ -36,6 +36,8 @@ namespace upSidetone {
         MidiInput MidiInput;
         KeyboardInputWPF KeyboardInput;
         MorseMouses MorseMouses;
+
+        SerialPortInfo PortInfo;
         SerialPortReader Port;
         VirtualSerialPort VPort;
 
@@ -83,12 +85,12 @@ namespace upSidetone {
             KeyerModeSelect.Items.Add("Straight key");
             KeyerModeSelect.Items.Add("Iambic A");
             KeyerModeSelect.Items.Add("Iambic B");
-            KeyerModeSelect.Items.Add("Hopper (bug-like)"); // previously called Cyborg (half human, half machine); isopod: like a bug but actually not
+            KeyerModeSelect.Items.Add("Hybrid"); // previously called Bugalike or Hopper or Cyborg (half human, half machine); isopod: like a bug but actually not
             KeyerModeSelect.Items.Add("Ultimatic");
             KeyerModeSelect.Items.Add("Autorepeat off");
             //KeyerModeSelect.Items.Add("Locking");
-            //KeyerModeSelect.Items.Add("Locking Hopper");
-            //KeyerModeSelect.Items.Add("Bulldozer");
+            //KeyerModeSelect.Items.Add("Locking Hybrid");
+            //KeyerModeSelect.Items.Add("Swamp");
 
             KeyerModeSelect.SelectedIndex = 4; // Ultimatic
 
@@ -99,15 +101,26 @@ namespace upSidetone {
 
             SoundGen?.SetGain(0.5);
 
-            foreach (var device in SerialPortReader.GetPortNames()) {
+            PortInfo = new SerialPortInfo();
+            try {
+                PortInfo.ScanForCaptions();
+            } catch (Exception e) {
+                Debug.WriteLine("Error scanning for port captions: " + e);
+                Debug.WriteLine(e.Message);
+                Debug.WriteLine(e.StackTrace);
+            }
+            foreach (var device in PortInfo.GetPortNamesWithCaptions()) {
                 SerialPorts.Items.Add(device);
             }
             SerialPorts.SelectedIndex = 0;
 
-            foreach (var device in SerialPortReader.GetPortNames()) { // yes, use names from SerialPortReader
+            foreach (var device in PortInfo.GetPortNamesWithCaptions()) {
                 VSerialPorts.Items.Add(device);
             }
             VSerialPorts.SelectedIndex = 0;
+
+            
+
 
             Debug.WriteLine("...hello.");
 
@@ -321,7 +334,7 @@ namespace upSidetone {
             if (e.Key == Key.F12 && !e.Handled && KeyerModeSelect.Items.Count < 8) {
                 string tag = " (experimental)";
                 KeyerModeSelect.Items.Add("Locking" + tag);
-                KeyerModeSelect.Items.Add("Locking Hopper" + tag);
+                KeyerModeSelect.Items.Add("Locking Hybrid" + tag);
                 KeyerModeSelect.Items.Add("Swamp" + tag);
 
                 e.Handled = true;
@@ -379,7 +392,7 @@ namespace upSidetone {
             } else if (KeyerModeSelect.SelectedIndex == 2) {
                 Levers.Mode = KeyerMode.IambicB;
             } else if (KeyerModeSelect.SelectedIndex == 3) {
-                Levers.Mode = KeyerMode.Cyborg;
+                Levers.Mode = KeyerMode.Hybrid;
             } else if (KeyerModeSelect.SelectedIndex == 4) {
                 Levers.Mode = KeyerMode.Ultimatic;
             } else if (KeyerModeSelect.SelectedIndex == 5) {
@@ -387,9 +400,9 @@ namespace upSidetone {
             } else if (KeyerModeSelect.SelectedIndex == 6) {
                 Levers.Mode = KeyerMode.Locking;
             } else if (KeyerModeSelect.SelectedIndex == 7) {
-                Levers.Mode = KeyerMode.LockingCyborg;
+                Levers.Mode = KeyerMode.HybridLocking;
             } else if (KeyerModeSelect.SelectedIndex == 8) {
-                Levers.Mode = KeyerMode.Bulldozer;
+                Levers.Mode = KeyerMode.Swamp;
             }
         }
 
@@ -434,6 +447,7 @@ namespace upSidetone {
         private void SerialPorts_SelectionChanged(object sender, SelectionChangedEventArgs arg) {
             Port?.Dispose();
             var selected = SerialPorts.SelectedValue as string;
+            selected = PortInfo.GetPortNameFromCaptioned(selected);
             if (selected == null || selected == "(none)") {
                 Port?.Dispose();
                 PortPinsPianoUpdate("");
@@ -455,6 +469,7 @@ namespace upSidetone {
         private void VSerialPorts_SelectionChanged(object sender, SelectionChangedEventArgs arg) {
             VPort?.Dispose();
             var selected = VSerialPorts.SelectedValue as string;
+            selected = PortInfo.GetPortNameFromCaptioned(selected);
             if (selected == null || selected == "(none)") {
                 VPort?.Dispose();
                 VPortPinsPianoUpdate("");

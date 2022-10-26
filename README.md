@@ -22,9 +22,9 @@ Low latency morse code keyer app for PC
   * Straight key (cootie / bug / oscillator)
   * Iambic A
   * Iambic B
-  * Cyborg — machine-spaced dits and human controlled dashes. Mix and match them with squeeze insertion; a two-paddle semi-automatic bug-like mode.
+  * Hybrid — machine-spaced dits and human controlled dashes. Mix and match them with squeeze insertion; a two-paddle semi-automatic bug-alike mode.
   * Ultimatic
-  * No Repeats  
+  * No Repeats
 
 # Audio devices:
 

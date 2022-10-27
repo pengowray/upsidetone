@@ -43,8 +43,14 @@ namespace upSidetone.InputDevices {
         /// </summary>
         /// <returns></returns>
         public IEnumerable<string> GetPortNamesWithCaptions() {
-            yield return "(none)";
+            //yield return "(none)";
+
             foreach (var device in GetPortNames()) {
+                if (device == "(none)") {
+                    yield return device;
+                    continue;
+                }
+                    
                 string cap = GetCaption(device);
                 string display = device;
                 if (!string.IsNullOrEmpty(cap)) {
@@ -192,11 +198,9 @@ namespace upSidetone.InputDevices {
                 return cap;
 
             if (cap.EndsWith(portName, StringComparison.InvariantCultureIgnoreCase)) {
-                Debug.WriteLine($"xxxxxx {cap}: '{portName}'");
                 return cap.Substring(0, cap.Length - portName.Length).TrimEnd();
             }
 
-            Debug.WriteLine($"qqqqqq {cap}: '{portName}'");
             return cap;
         }
 

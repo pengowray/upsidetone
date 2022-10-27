@@ -9,6 +9,8 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Arrowgene.ENet" Version="1.314.0" />
+    <PackageReference Include="ENet-CSharp" Version="2.4.8" />
     <PackageReference Include="IPrompt" Version="1.0.1" />
     <PackageReference Include="ManyMouseSharp" Version="1.0.7" />
     <PackageReference Include="NAudio" Version="2.1.0" />

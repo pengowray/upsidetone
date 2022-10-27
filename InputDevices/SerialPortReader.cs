@@ -62,6 +62,7 @@ namespace upSidetone.InputDevices {
                 if (PortName != null && !PortName.StartsWith("COM", StringComparison.OrdinalIgnoreCase)) {
                     // eg: "CNCA0: 'The given port name (CNCA0) does not resolve to a valid serial port. (Parameter 'portName')'"
                     // discussion: https://web.archive.org/web/20221026061825/https://www.pcreview.co.uk/threads/problem-with-system-io-ports-serialport-open.2907727/
+                    // see also (note fixed code also does not allow non-COM ports): https://stackoverflow.com/questions/14885288/i-o-exception-error-when-using-serialport-open
                     UpdatePiano($"{Port?.PortName} Error: Microsoft's System.IO.Ports does not support port names which do not start with 'COM'. '{e.Message}'");
                 } else {
                     // eg: "COM5: 'Access to the path 'COM5' is denied.'" (when in use by another application or instance)

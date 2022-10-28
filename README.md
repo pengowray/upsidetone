@@ -69,11 +69,12 @@ The longer term vision for UpSidetone is as a general purpose utility. Some poss
 
 More immediate TODO:
 
+* Save settings
+* Move audio handling in its own thread 
 * Preferred sample rate setting
 * Exclsuive mode audio
-* Save settings
 * Much more in my notes
 
-Releases:
+Download:
 
 * https://github.com/pengowray/upsidetone/releases

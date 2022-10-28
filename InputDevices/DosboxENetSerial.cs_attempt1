@@ -1,4 +1,5 @@
-﻿using System;
+﻿/*
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -6,7 +7,6 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-//using Arrowgene.ENet;
 using ENet;
 
 using upSidetone.Sound;
@@ -17,24 +17,14 @@ namespace upSidetone.InputDevices {
 
     // dosbox config:
     // serial1=nullmodem server:127.0.0.1 port:5673 sock:1  // unneeded: transparent:0  nonlocal:1
-    
+
     // for com0com: serial1=directserial realport:com5
 
     // attempt 1: https://github.com/nxrighthere/ENet-CSharp
     // [very vague error] System.InvalidOperationException: Host creation call failed -- so....?
 
-    // alternative 1: https://github.com/StrangeLoopGames/ENet-CSharp -- fork with more descriptive errors
+    // attempt 1b: https://github.com/StrangeLoopGames/ENet-CSharp -- fork with more descriptive errors
     // "Either the application has not called WSAStartup, or WSAStartup failed." (same code as above); WinSock thing. Fixing will mean no chance of crossplatform
-
-    // alternative 2: https://github.com/sebastian-heinz/Arrowgene.ENet
-    // actual rewrite in C#. Promising but feeatures incomplete. Probably good enough.
-
-    // alternative 3: https://github.com/moonshadow565/LENet (1.0.1)
-    // Direct port of C ENet networking library to .net/C#.
-    // Supports base enet 1.2.x protocol together with modifications done by Riot Games for game League of Legends.
-    // possibly just a clone of: https://github.com/LeagueSandbox/ENetSharpLeague (2019 archived, but newer version? 1.1.0?)
-
-    // alternative 4: https://github.com/moien007/ENet.Managed
 
 
     public class DosboxENetSerial : IDisposable {
@@ -45,7 +35,7 @@ namespace upSidetone.InputDevices {
         public Levers Levers;
         Host server;
         public int maxClients = 10;
-        public ushort port = 5673; // 7373;
+        public ushort port = 5672;
 
         Task Task;
         Thread Thread;
@@ -93,7 +83,6 @@ namespace upSidetone.InputDevices {
             //address.SetIP("127.0.0.1"); // maybe?
             address.Port = port;
 
-            // error
             server.Create();
 
             Event netEvent;
@@ -226,3 +215,5 @@ namespace upSidetone.InputDevices {
     }
 
 }
+
+*/

@@ -9,9 +9,18 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Arrowgene.ENet" Version="1.314.0" />
-    <PackageReference Include="ENet-CSharp" Version="2.4.8" />
+    <None Remove="InputDevices\DosboxENetSerial.cs_attempt1" />
+    <None Remove="InputDevices\DosboxENetSerial.cs_attempt2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Include="InputDevices\DosboxENetSerial.cs_attempt1" />
+    <Compile Include="InputDevices\DosboxENetSerial.cs_attempt2" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="IPrompt" Version="1.0.1" />
+    <PackageReference Include="LENet" Version="1.0.1" />
     <PackageReference Include="ManyMouseSharp" Version="1.0.7" />
     <PackageReference Include="NAudio" Version="2.1.0" />
     <PackageReference Include="NAudio.Midi" Version="2.1.0" />

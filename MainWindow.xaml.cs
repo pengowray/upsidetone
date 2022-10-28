@@ -41,8 +41,8 @@ namespace upSidetone {
         SerialPortReader Port;
         VirtualSerialPort VPort;
 
-        //ENetSerial ENetSerial; // not working / experimental 
-        DosboxTcpSerial TcpSerial; // test
+        //DosboxENetSerial? ENetSerial; // experimental/broken
+        DosboxTcpSerial? TcpSerial; // test serial port connection server for dosbox
 
         private bool disposedValue;
 
@@ -121,15 +121,15 @@ namespace upSidetone {
             }
             VSerialPorts.SelectedIndex = 0;
 
-            // experimental (not working)
-            //DosboxENetSerial = new();
-            //DosboxENetSerial.Levers = Levers;
-            //DosboxENetSerial.StartAsThread();
+            ////experimental (port 5672; never working)
+            //ENetSerial = new();
+            //ENetSerial.Levers = Levers;
+            //ENetSerial.StartAsThread();
 
-            //// experimental (receives)
-            TcpSerial = new();
-            TcpSerial.Levers = Levers;
-            TcpSerial.StartAsThread();
+            //// experimental (creates server on port 5673)
+            //TcpSerial = new();
+            //TcpSerial.Levers = Levers;
+            //TcpSerial.StartAsThread();
 
             Debug.WriteLine("...hello.");
 
@@ -289,6 +289,7 @@ namespace upSidetone {
                     MorseMouses?.Dispose();
                     //Levers?.Dispose(); // TODO
                     TcpSerial?.Dispose();
+                    //ENetSerial?.Dispose();
                 }
 
                 // free unmanaged resources (unmanaged objects) and override finalizer

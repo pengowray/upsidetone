@@ -1,0 +1,233 @@
+﻿/*
+using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Drawing.Imaging;
+using System.Linq;
+using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
+
+using upSidetone.Sound;
+
+using LENet;
+using System.Net;
+
+namespace upSidetone.InputDevices {
+
+    // experimental support for direct connection to DosBOX comm ports 
+    // getting System.Net.Sockets.SocketException and overly complex.
+
+    // dosbox config:
+    // #serial1=directserial realport:com5 
+    // serial1=nullmodem server:127.0.0.1 port:5672 sock:1
+    // or in dosbox:
+    // serial1 nullmodem server:localhost port:5672 sock:1
+    // dosbox-x:
+    // serial 1 nullmodem server:localhost port:5672 sock:1
+
+    // attempt 2: https://github.com/moonshadow565/LENet (1.0.1) <-- (this) via nuget
+    // Direct port of C ENet networking library to .net/C#.
+    // Supports base enet 1.2.x protocol together with modifications done by Riot Games for game League of Legends.
+    // clone of ENetSharpLeague
+    // has dummy server code
+    // seems to have League specific settings
+    // vague error: Exception thrown: 'System.Net.Sockets.SocketException' in System.Net.Sockets.dll
+
+    // attempt 2b
+    // https://github.com/LeagueSandbox/ENetSharpLeague (2019 archived; 1.1.0)
+    // no example code
+
+    // try next:
+    // alternative 5: https://github.com/sebastian-heinz/Arrowgene.ENet
+    // actual rewrite in C#. Promising but feeatures incomplete. Probably good enough.
+
+    // alternative 6: https://github.com/moien007/ENet.Managed
+
+
+    public class DosboxENetSerial : IDisposable {
+
+        //static readonly CancellationTokenSource cancelTokenSource = new CancellationTokenSource();
+        bool cancel = false;
+
+        public Host host;
+        public Peer peer;
+        public string name;
+        int iteration = 0;
+
+        public Levers Levers;
+        public int maxClients = 10;
+        public ushort Port = 5672;
+
+        Task Task;
+        Thread Thread;
+
+        bool Xrts;
+        bool Xdtr;
+
+        private bool disposedValue;
+
+
+        public void Stop() {
+            cancel = true;
+
+            try {
+                peer?.Disconnect(0);
+                host?.Dispose();
+
+            } catch(Exception) { }
+        }
+
+        public void StartAsThread() {
+            try {
+                Thread = new Thread(new ThreadStart(() => RunLoop()));
+                Thread.Start();
+
+            } catch (Exception e) {
+                Debug.WriteLine(e);
+                Debug.WriteLine(e.Message);
+                Debug.WriteLine(e.StackTrace);
+            }
+
+        }
+        public void StartAsTask() {
+            
+            try {
+                //Task = Task.Run(() => { Init(); });
+                Task = Task.Factory.StartNew(() => RunLoop());
+
+            } catch (Exception e) {
+                Debug.WriteLine(e);
+                Debug.WriteLine(e.Message);
+                Debug.WriteLine(e.StackTrace);
+            }
+        }
+
+
+        public int RunLoop(int timeout = 8) {
+            //Exception thrown: 'System.Net.Sockets.SocketException' in System.Net.Sockets.dll
+
+            var address = new Address("127.0.0.1", Port);
+            host = new Host(LENet.Version.Seasson8_Server, address, 32, 8, 0, 0);
+            // client example:
+            //host = new Host(LENet.Version.Seasson8_Client, null, 1, 8, 0, 0);
+            //peer = client.host.Connect(address, 8);
+
+            int result;
+            do {
+                result = RunOnce(timeout);
+            } while (result > 0 && !cancel);
+            return result;
+        }
+
+        public int RunOnce(int timeout = 8) {
+            int result;
+            Debug.WriteLine($"[{name}] Step: {iteration++}");
+            var evnt = new Event();
+            result = host.HostService(evnt, (uint)timeout);
+            switch (evnt.Type) {
+                case EventType.CONNECT:
+                    Debug.WriteLine($"[{name}] Peer ({evnt.Peer.SessionID}) connected!");
+                    peer = evnt.Peer;
+                    break;
+                case EventType.DISCONNECT:
+                    Debug.WriteLine($"[{name}] Peer ({evnt.Peer.SessionID}) diconnected!");
+                    break;
+                case EventType.RECEIVE:
+                    Debug.WriteLine($"[{name}] Peer ({evnt.Peer.SessionID}) sent data({evnt.Packet.DataLength})");
+                    ProcessPacket(evnt.Packet);
+                    break;
+                default:
+                    break;
+            }
+            if (result < 0) {
+                Debug.WriteLine($"[{name}] Error!");
+            }
+            return result;
+        }
+    
+
+        private bool escaped = false; // last value was escape symbol
+        private void ProcessPacket(Packet packet) {
+            byte[] buffer = packet.Data;
+            
+            foreach (byte b in buffer) {
+                if (escaped) {
+
+                    if (b == 0xFF) {
+                        // literal 0xFF in stream
+                        escaped = false;
+                        continue; 
+                    }
+
+                    bool xrts = (b & 0x01) > 0; 
+                    bool xdtr = (b & 0x02) > 0;
+                    bool lcr  = (b & 0x04) > 0; // Line Control Break (LCR_BREAK_MASK) // CTRL+C?
+
+                    if (xrts != Xrts) {
+                        Xrts = xrts;
+                        if (xrts) {
+                            Levers.PushLeverDown(VirtualLever.Left);
+                        } else {
+                            Levers.ReleaseLever(VirtualLever.Left);
+                        }
+                    }
+
+                    if (xdtr != Xdtr) {
+                        Xdtr = xdtr;
+                        if (xdtr) {
+                            Levers.PushLeverDown(VirtualLever.Right);
+                        } else {
+                            Levers.ReleaseLever(VirtualLever.Right);
+                        }
+                    }
+
+                    escaped = false;
+                } else {
+                    if (b == 0xFF) {
+                        escaped = true;
+
+                    } else {
+                        //ignore
+                        //escaped = false; // redundant
+                    }
+
+                }
+            }
+        }
+
+        protected virtual void Dispose(bool disposing) {
+            if (!disposedValue) {
+                if (disposing) {
+                    // TODO: dispose managed state (managed objects)
+                    Stop();
+                    host?.Dispose();
+                    Task?.Dispose();
+                }
+
+                // TODO: free unmanaged resources (unmanaged objects) and override finalizer
+                // TODO: set large fields to null
+                disposedValue = true;
+                host = null;
+                peer = null;
+                Task = null;
+                Thread = null;
+            }
+        }
+
+        // // TODO: override finalizer only if 'Dispose(bool disposing)' has code to free unmanaged resources
+        // ~TcpSerial()
+        // {
+        //     // Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
+        //     Dispose(disposing: false);
+        // }
+
+        public void Dispose() {
+            // Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
+            Dispose(disposing: true);
+            GC.SuppressFinalize(this);
+        }
+    }
+
+}
+*/

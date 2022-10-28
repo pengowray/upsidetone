@@ -30,7 +30,7 @@ namespace upSidetone.InputDevices {
     // Direct port of C ENet networking library to .net/C#.
     // Supports base enet 1.2.x protocol together with modifications done by Riot Games for game League of Legends.
     // clone of ENetSharpLeague
-    // has dummy server code
+    // has dummy server code: https://github.com/moonshadow565/LENet/blob/master/DummyServer/Program.cs
     // seems to have League specific settings
     // vague error: Exception thrown: 'System.Net.Sockets.SocketException' in System.Net.Sockets.dll
 

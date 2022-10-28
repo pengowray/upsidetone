@@ -24,7 +24,7 @@ namespace upSidetone.InputDevices {
     // [very vague error] System.InvalidOperationException: Host creation call failed -- so....?
 
     // attempt 1b: https://github.com/StrangeLoopGames/ENet-CSharp -- fork with more descriptive errors
-    // "Either the application has not called WSAStartup, or WSAStartup failed." (same code as above); WinSock thing. Fixing will mean no chance of crossplatform
+    // "Either the application has not called WSAStartup, or WSAStartup failed." (same code as above); WinSock thing. Fixing will mean no chance of crossplatform I guess?
 
 
     public class DosboxENetSerial : IDisposable {

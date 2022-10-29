@@ -4,7 +4,7 @@ by Pengo Wray [AA9GO]
 
 Low latency morse code keyer app for PC
 
-![image](https://user-images.githubusercontent.com/800133/197386299-15112019-1427-43cb-86a3-157cfb72e086.png)
+![image](https://user-images.githubusercontent.com/800133/198856516-db0efeaa-28b7-457c-86a5-469725bc0c24.png)
 
 # Features:
 

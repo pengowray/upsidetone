@@ -41,6 +41,7 @@ namespace upSidetone {
         SerialPortReader Port;
         VirtualSerialPort VPort;
 
+        bool enableTcpSerialServer = false;
         //DosboxENetSerial? ENetSerial; // experimental/broken
         DosboxTcpSerial? TcpSerial; // test serial port connection server for dosbox
 
@@ -126,10 +127,12 @@ namespace upSidetone {
             //ENetSerial.Levers = Levers;
             //ENetSerial.StartAsThread();
 
-            //// experimental (creates server on port 5673)
-            //TcpSerial = new();
-            //TcpSerial.Levers = Levers;
-            //TcpSerial.StartAsThread();
+            if (enableTcpSerialServer) {
+                // experimental (creates server on port 5673)
+                TcpSerial = new();
+                TcpSerial.Levers = Levers;
+                TcpSerial.StartAsThread();
+            }
 
             Debug.WriteLine("...hello.");
 

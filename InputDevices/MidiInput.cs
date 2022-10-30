@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using upSidetone.Sound;
 using NAudio.Midi;
 using System.Windows.Forms;
+using System.Diagnostics;
 
 namespace upSidetone.InputDevices
 {
@@ -78,8 +79,13 @@ namespace upSidetone.InputDevices
                 //remove old device
                 Midi.MessageReceived -= MidiIn_MessageReceived;
                 Midi.ErrorReceived -= MidiIn_ErrorReceived;
-                Midi?.Stop();
-                Midi?.Close();
+                try {
+                    Midi?.Stop();
+                    Midi?.Close();
+                } catch (Exception) {
+                    // e.g. if device was disconnected: An unhandled exception of type 'NAudio.MmException' occurred in NAudio.Midi.dll
+
+                }
             }
 
             if (selectedDeviceIndex == -1) // NONE_LABEL ("none")
@@ -148,8 +154,11 @@ namespace upSidetone.InputDevices
 
         private void MidiIn_ErrorReceived(object? sender, MidiInMessageEventArgs e)
         {
-            //throw new NotImplementedException();
-            //MainWindow.Debug("midi error: " + e?.ToString()); // can't debug here, wrong thread
+            Debug.WriteLine("midi error: " + e?.ToString()); // can't debug here, wrong thread
+
+            //todo: close midi device
+            
+
         }
 
         protected virtual void Dispose(bool disposing)

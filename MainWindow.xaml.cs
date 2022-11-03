@@ -85,6 +85,7 @@ namespace upSidetone {
             AudioOutputSelect.SelectedIndex = 0;
             MidiSelect.SelectedIndex = 0;
 
+            KeyerModeSelect.Items.Add("Oscillator"); 
             KeyerModeSelect.Items.Add("Straight key");
             KeyerModeSelect.Items.Add("Iambic A");
             KeyerModeSelect.Items.Add("Iambic B");
@@ -95,10 +96,10 @@ namespace upSidetone {
             //KeyerModeSelect.Items.Add("Locking Hybrid");
             //KeyerModeSelect.Items.Add("Swamp");
 
-            KeyerModeSelect.SelectedIndex = 4; // Ultimatic
+            KeyerModeSelect.SelectedIndex = 5; // Ultimatic
 
             Volume.Text = "50";
-            Frequency.Text = "550";
+            Frequency.Text = "440";
             WPM.Text = "18";
             Flipped.IsChecked = false;
 
@@ -381,6 +382,13 @@ namespace upSidetone {
             });
         }
 
+        public void UpdateKeyerPianoText(string text) {
+            this.Dispatcher.Invoke(() => {
+                KeyerPianoText.Text = text ?? "";
+            });
+
+        }
+
         internal void SetMouseNames(IEnumerable<string> mice, int selectedIndex = 0) {
             this.Dispatcher.Invoke(() => {
                 foreach (var mouse in mice) {
@@ -400,22 +408,24 @@ namespace upSidetone {
             Levers.ReleaseAll();
 
             if (KeyerModeSelect.SelectedIndex == 0) {
-                Levers.Mode = KeyerMode.StraightKey;
+                Levers.Mode = KeyerMode.Oscillator;
             } else if (KeyerModeSelect.SelectedIndex == 1) {
-                Levers.Mode = KeyerMode.IambicA;
+                Levers.Mode = KeyerMode.StraightKey;
             } else if (KeyerModeSelect.SelectedIndex == 2) {
-                Levers.Mode = KeyerMode.IambicB;
+                Levers.Mode = KeyerMode.IambicA;
             } else if (KeyerModeSelect.SelectedIndex == 3) {
-                Levers.Mode = KeyerMode.Hybrid;
+                Levers.Mode = KeyerMode.IambicB;
             } else if (KeyerModeSelect.SelectedIndex == 4) {
-                Levers.Mode = KeyerMode.Ultimatic;
+                Levers.Mode = KeyerMode.Hybrid;
             } else if (KeyerModeSelect.SelectedIndex == 5) {
-                Levers.Mode = KeyerMode.NoRepeats;
+                Levers.Mode = KeyerMode.Ultimatic;
             } else if (KeyerModeSelect.SelectedIndex == 6) {
-                Levers.Mode = KeyerMode.Locking;
+                Levers.Mode = KeyerMode.NoRepeats;
             } else if (KeyerModeSelect.SelectedIndex == 7) {
-                Levers.Mode = KeyerMode.HybridLocking;
+                Levers.Mode = KeyerMode.Locking;
             } else if (KeyerModeSelect.SelectedIndex == 8) {
+                Levers.Mode = KeyerMode.HybridLocking;
+            } else if (KeyerModeSelect.SelectedIndex == 9) {
                 Levers.Mode = KeyerMode.Swamp;
             }
         }
@@ -452,10 +462,6 @@ namespace upSidetone {
             } else {
                 Levers.SwapLeftRight = false;
             }
-        }
-
-        private void MouseListRefresh_Click(object sender, RoutedEventArgs e) {
-
         }
 
         private void SerialPorts_SelectionChanged(object sender, SelectionChangedEventArgs arg) {
@@ -527,5 +533,7 @@ namespace upSidetone {
                 VPort.ResetPins();
             }
         }
+
+        
     }
 }

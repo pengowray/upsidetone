@@ -33,6 +33,8 @@ namespace upSidetone.Sound {
         private double Freq;
         private double Gain; // Volume
 
+        private bool DebugOn = true;
+
         public bool SetWPM(double wpm) {
             // returns true on success
 
@@ -91,7 +93,7 @@ namespace upSidetone.Sound {
         LeverKind[]? Fill;
         int FillPos = 0;
         bool BFill = false; // true: iambic B squeeze mode is on: whenever a symbol is queued, the next in the fill is required
-        bool StraightDown = false; // is the straight key down (shouldn't we just ask Levers?)
+        LeverKind StraightDown = LeverKind.None; // None or StraightDown or Oscillate. Is the straight key down? (shouldn't we just ask Levers?)
 
         public WaveFormat ParentWaveFormat => AudioOut?.Format;
 
@@ -102,7 +104,7 @@ namespace upSidetone.Sound {
         public ToneMaker(AudioOut audioOut) {
             
             SetWPM(18.0); // default wpm
-            SetFreq(550);
+            SetFreq(440);
 
             AudioOut = audioOut;
             //ScoreProvider = new MixingSampleProvider(ParentWaveFormat);
@@ -140,7 +142,8 @@ namespace upSidetone.Sound {
                     //try again. (risky recursion)
                     //return GetNextLever();
                 }
-                if ((lever == LeverKind.Straight|| lever == LeverKind.PoliteStraight) && !StraightDown) {
+
+                if ((lever == LeverKind.Oscillate || lever == LeverKind.Straight) && StraightDown == LeverKind.None) {
                     return new(LeverKind.None, Requiredness.Fill);
                 }
 
@@ -168,14 +171,38 @@ namespace upSidetone.Sound {
             // todo
         }
 
+        int UpdateTickets = 0;
+        void UpdatePianoTwice(string also = "") {
+
+            DebugUpdate(also);
+
+            UpdateTickets++;
+            int myTicket = UpdateTickets;
+            int millisecondsDelay = 2000;
+            Task.Run(async () => {
+                await Task.Delay(millisecondsDelay);
+
+                if (UpdateTickets == myTicket) { // only run most recent update request
+                    DebugUpdate("");
+                }
+            });
+        }
+        private void DebugUpdate(string also = "") {
+            if (DebugOn) {
+                string playing1 = String.Join(" ", Playing.Select(p => $"{p.Lever}{(p.IsLockedIn ? "🔒" : "")}"));
+                string playing2 = ScoreProvider.DebugText();
+                MainWindow.Me.UpdateKeyerPianoText("1: " + playing1 + "\n2: " + playing2 + "\n" + also);
+            }
+        }
+
         private void Levers_LeverUp(Levers levers, LeverKind lever, LeverKind require, LeverKind[]? fill, bool bFill) {
             //TODO: check if correct lever released
             //TODO: check if other lever is down
 
             //if bringing up active straight key...
 
-            if (lever == LeverKind.Straight || lever == LeverKind.PoliteStraight) {
-                StraightDown = false;
+            if (lever == LeverKind.Oscillate || lever == LeverKind.Straight) {
+                StraightDown = LeverKind.None;
 
                 _ = ReleaseStraightKey(aggressive: true); // also release budding queued straight keys
             } else {
@@ -190,6 +217,7 @@ namespace upSidetone.Sound {
             BFill = bFill; //always false here
 
             RefillBeeps(replaceBFill: false);
+            UpdatePianoTwice();
         }
 
         private void Levers_LeverDown(Levers levers, LeverKind lever, LeverKind require, LeverKind[]? fill, bool bFill) {
@@ -199,8 +227,8 @@ namespace upSidetone.Sound {
             FillPos = 0;
             BFill = bFill;
 
-            if (lever == LeverKind.Straight || lever == LeverKind.PoliteStraight) {
-                StraightDown = true;
+            if (lever == LeverKind.Oscillate || lever == LeverKind.Straight) {
+                StraightDown = lever;
             } else {
                 _ = ReleaseStraightKey(aggressive: true);
             }
@@ -209,8 +237,7 @@ namespace upSidetone.Sound {
             BFillCheck2(); // lock in next if we've started a squeeze
 
             //Debug.WriteLine("queu1: " + String.Join(" ", Playing.Select(p => p.Lever)));
-        }
-
+            UpdatePianoTwice();        }
 
 
         private SwitchableDelayedSound? ReleaseStraightKey(bool aggressive) {
@@ -242,6 +269,7 @@ namespace upSidetone.Sound {
             }
 
             //}); 
+            UpdatePianoTwice();
         }
 
         private void FillMissingBeeps() {
@@ -299,7 +327,7 @@ namespace upSidetone.Sound {
 
             var prev = sound;
             for (int i = 0; i < 3; i++) {
-                if (prev.Chosen == null || prev.Lever == LeverKind.Straight || prev.Lever == LeverKind.PoliteStraight || !prev.DurationSamples.HasValue) {
+                if (prev.Chosen == null || prev.Lever == LeverKind.Oscillate || prev.Lever == LeverKind.Straight || !prev.DurationSamples.HasValue) {
                     break;
                 }
 
@@ -477,7 +505,7 @@ namespace upSidetone.Sound {
                     // crash rather than do wrong (for debuging)
                     //throw new ArgumentException("Can't start after when durationless");
                     //TODO: fade out and play after
-                //}
+                //} 
 
                 // assumes ditLen pause after straight key
                 //TODO: polite vs not polite

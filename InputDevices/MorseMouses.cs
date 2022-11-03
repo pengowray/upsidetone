@@ -132,7 +132,7 @@ namespace upSidetone.InputDevices {
                 //ForegroundColor = ConsoleColor.Red;
                 WriteLine(e.ToString());
                 //ResetColor();
-                finalMessage = "Error";
+                finalMessage = "Error: " + e.Message;
             }
             WriteLine($"{finalMessage}");
             //Read();

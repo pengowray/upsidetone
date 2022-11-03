@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-
+using System.Windows.Controls;
 using NAudio.Utils;
 using NAudio.Wave;
 
@@ -27,6 +27,11 @@ namespace upSidetone.Sound {
         private float[] sourceBuffer;
         private const int MaxInputs = 1024; // protect ourselves against doing something silly
 
+        public string DebugText() {
+            var sounds = sources.Select(s => s as SwitchableDelayedSound);
+            string playing = String.Join(" ", sounds.Select(p => p == null ? "null" : $"{p.Lever}{(p.IsLockedIn ? "🔒" : "")}"));
+            return playing;
+        }
 
         /// <summary>
         /// Creates a new MixingSampleProvider, with no inputs, but a specified WaveFormat
@@ -91,7 +96,7 @@ namespace upSidetone.Sound {
             // the same time as a Read, rather than two AddMixerInput calls at the same time
             lock (sources) {
                 if (sources.Count >= MaxInputs) {
-                    throw new InvalidOperationException("Too many mixer inputs");
+                    throw new InvalidOperationException("Too many mixer inputs. " + DebugText() );
                 }
                 sources.Add(mixerInput);
             }

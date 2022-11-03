@@ -159,7 +159,7 @@ namespace upSidetone.Sound
             if (last == LeverKind.Dit) {
                 // dit get still down
                 DoDitKeyDown(force: true);
-            } else if (last == LeverKind.Straight){
+            } else if (last == LeverKind.Oscillate){
                 // dit key was released and straight key is waiting
                 StraightKeyDown(1, force: true); 
             }
@@ -170,12 +170,12 @@ namespace upSidetone.Sound
             // https://csharp.hotexamples.com/examples/NAudio.Wave/DirectSoundOut/Play/php-directsoundout-play-method-examples.html
 
             var previousLast = Down.LastOrDefault();
-            AddDownLever(LeverKind.Straight);
+            AddDownLever(LeverKind.Oscillate);
 
             if (previousLast == LeverKind.Dit) {
                 return; // wait until dit finished
 
-            } else if (previousLast == LeverKind.Straight) {
+            } else if (previousLast == LeverKind.Oscillate) {
                 // nothing to do 
                 if (!force) return;
             }
@@ -209,7 +209,7 @@ namespace upSidetone.Sound
         }
 
         public void StraightKeyUp() {
-            RemoveDownLever(LeverKind.Straight);
+            RemoveDownLever(LeverKind.Oscillate);
             StraightAdsr?.Stop();
             StraightAdsr = null;
         }

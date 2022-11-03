@@ -14,6 +14,7 @@ namespace upSidetone.InputDevices {
 
     public class SerialPortReader : IDisposable {
 
+        //TODO: merge with VirtualSerialPort: allow same port for read and write
         //TODO: reduce duplicated code with VirtualSerialPort 
 
         public string PortName { get; private set; }
@@ -130,10 +131,15 @@ namespace upSidetone.InputDevices {
             if (Port != null) {
                 //if (Port.IsOpen) yield return "Open"; // when open, show the port name (no need to say "Open")
                 if (Port.BreakState) yield return "Break";
-                if (Port.CDHolding) yield return "CD";
-                if (Port.DsrHolding) yield return "DSR";
-                if (Port.DtrEnable) yield return "DTR";
-                if (Port.RtsEnable) yield return "RTS";
+                if (Port.CDHolding) yield return "CD"; // pin 1 (aka DCD)
+                // pin 2: RxD 
+                // pin 3: TxD
+                if (Port.DtrEnable) yield return "DTR"; // pin 4 (tx to DSR)
+                // pin 5: GND
+                if (Port.DsrHolding) yield return "DSR"; // pin 6 (rx from DTR)
+                if (Port.RtsEnable) yield return "RTS"; // pin 7 (tx to cts)
+                if (Port.CtsHolding) yield return "CTS"; // pin 8
+                // pin 9: RI ← Ring Indicator
                 if (Port.BytesToRead > 0) yield return $"[{Port.BytesToRead} bytes to read]";
             }
         }

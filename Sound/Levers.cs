@@ -31,8 +31,8 @@ namespace upSidetone.Sound {
         //todo: max "indefinite" length, e.g. 8 seconds before fading out
 
         None,
-        Straight, // (indefinite) straight key (will extend other elements if pressed while they're going)
-        PoliteStraight, // for BugStyle: will queue up and leave a pause between other elements
+        Oscillate, // (indefinite) straight key (will extend other elements if pressed while they're going)
+        Straight, // previously called "PoliteStraight" e.g. for second paddle elements hybrid: will queue up and leave a pause between other elements
         Dit,
         Dah,
         Stop, // signal to not repeat fill
@@ -45,7 +45,8 @@ namespace upSidetone.Sound {
 
     public enum KeyerMode {
         None,
-        StraightKey, // or plain oscillator; for cooties / sideswipers / bugs
+        Oscillator, // plain oscillator, for external input (e.g. serial), no additional spacing added; perhaps use with a bug (until ACS option added) 
+        StraightKey, // for straightkeys, cooties, sideswipers -- may add minimum spacing between elements; 
         IambicA,
         IambicB,
         Hybrid, // semi-automatic two-paddle "bug" — bug not a bug; don't pick this option with a bug
@@ -106,14 +107,14 @@ namespace upSidetone.Sound {
 
             switch (Mode) {
                 case KeyerMode.StraightKey:
-                    return LeverKind.Straight;
+                    return LeverKind.Oscillate;
 
                 case KeyerMode.Hybrid:
                 case KeyerMode.HybridLocking:
                     if (left) {
                         return LeverKind.Dit;
                     } else {
-                        return LeverKind.PoliteStraight;
+                        return LeverKind.Straight;
                     }
 
                 case KeyerMode.IambicA:
@@ -180,7 +181,7 @@ namespace upSidetone.Sound {
 
                 // defaults
                 //LeverKind[] require = new LeverKind[] { lever }; // TODO: if there's a case where we need to add more than one then change this back to array or IEnumerable
-                if (lever != LeverKind.PoliteStraight && lever != LeverKind.Straight) {
+                if (lever != LeverKind.Straight && lever != LeverKind.Oscillate) {
                     fill = RepeatFill(lever);
                 }
 
@@ -264,7 +265,7 @@ namespace upSidetone.Sound {
                 var newLast = Down.LastOrDefault();
 
                 if (newLast != LeverKind.None) {
-                    if (newLast != LeverKind.Straight && newLast != LeverKind.PoliteStraight) {
+                    if (newLast != LeverKind.Oscillate && newLast != LeverKind.Straight) {
                         defaultFill = RepeatFill(newLast, LeverKind.None);
                     } else {
                         defaultFill = RepeatFill(newLast);
@@ -317,14 +318,14 @@ namespace upSidetone.Sound {
                     return;
                 }
             } else if (mode == KeyerMode.Hybrid) {
-                if (lever == LeverKind.Dit && Down.Contains(LeverKind.PoliteStraight)) {
+                if (lever == LeverKind.Dit && Down.Contains(LeverKind.Straight)) {
                     //var fill = RepeatFill(LeverKind.PoliteStraight, LeverKind.Stop);
                     //LeverUp?.Invoke(this, lever, LeverKind.None, fill);
                     // note: required lever should not be started if straight key released
-                    LeverKind require = wasLast ? LeverKind.PoliteStraight : LeverKind.None;
+                    LeverKind require = wasLast ? LeverKind.Straight : LeverKind.None;
                     LeverUp?.Invoke(this, lever, require, null);
                     return;
-                } else if (lever == LeverKind.PoliteStraight && Down.Contains(LeverKind.Dit)) {
+                } else if (lever == LeverKind.Straight && Down.Contains(LeverKind.Dit)) {
                     LeverKind require = wasLast ? LeverKind.Dit : LeverKind.None;
                     LeverUp?.Invoke(this, lever, require, defaultFill);
                     return;

@@ -21,12 +21,28 @@ namespace upSidetone.InputDevices {
         private SerialPort? Port;
         private Levers Levers;
 
-        // set automatically during Enable()
-        public bool CtsNormallyHigh = false;
-        public bool DsrNormallyHigh = true;
+
+        //default setup:
+        //send → receive
+        //RTS → CTS (7→8) — Dits
+        //DTR → DSR (4→6) — Dashes
+
+
+        public bool IsSecondPort;
+
+        // play as input or listen ("receive")
+        public bool PlayAsInputOn = true;
+        public bool ListenOn = false; // play on a separate oscillator
+        public bool CtsNormallyHigh = false; // set automatically during Enable()
+        public bool DsrNormallyHigh = true;  // set automatically during Enable()
+
+
+        // send (pass thru) -- DTR / RTS
+        public bool PassThruOn = false; // pass on lever presses
+        public bool DtrNormallyHigh = false; 
+        public bool RtsNormallyHigh = true;
 
         private bool disposedValue;
-        
 
         public SerialPortReader(string name, Levers levers) {
             PortName = name;
@@ -37,18 +53,29 @@ namespace upSidetone.InputDevices {
             try {
                 UpdatePiano("");
 
+                //Port = new SerialPort(PortName, 300, Parity.None, 8); // commented out: don't need to pretend we're setting it up for data
                 Port = new SerialPort(PortName);
                 Port.Handshake = Handshake.None;
-                //Port = new SerialPort(Name, 300, Parity.None, 8); // commented out: don't need to pretend to set it up for data
+
                 Port.PinChanged += Port_PinChanged;
                 Port.ErrorReceived += Port_ErrorReceived;
+                Levers.LeverDown += Levers_LeverDown;
+                Levers.LeverUp += Levers_LeverUp;
+
                 Port.Open();
 
                 // automatic detection of normal state (this could be better
                 // TODO: ought to have manual settings option too
                 // TODO: pick different pins, or just one pin
+
+                // receive
                 CtsNormallyHigh = Port?.CtsHolding ?? CtsNormallyHigh;
                 DsrNormallyHigh = Port?.DsrHolding ?? DsrNormallyHigh;
+
+                //send
+                Port.DtrEnable = DtrNormallyHigh;
+                Port.RtsEnable = RtsNormallyHigh;
+
 
                 if (Port != null && Port.IsOpen) {
                     UpdatePiano("Connected");
@@ -72,27 +99,70 @@ namespace upSidetone.InputDevices {
             }
         }
 
+
+        private void Levers_LeverUp(Levers levers, LeverKind lever, LeverKind require, LeverKind[]? fill, bool bFill = false) {
+            // pass through mode
+            // TODO: for pass through mode, really should be subscribing to the plain lever events, not as filtered as this
+
+            if (!PassThruOn)
+                return;
+
+            if (Port == null || !Port.IsOpen)
+                return;
+
+            // DSR (6) <-> DTR (4)
+            // RTS (7) <-> CTS (8)
+            if (lever == LeverKind.Dit || lever == LeverKind.Straight || lever == LeverKind.Oscillate) {
+                Port.RtsEnable = RtsNormallyHigh;
+            } else if (lever == LeverKind.Dah) {
+                Port.DtrEnable = DtrNormallyHigh;
+            }
+        }
+
+        private void Levers_LeverDown(Levers levers, LeverKind lever, LeverKind require, LeverKind[]? fill, bool bFill = false) {
+            if (!PassThruOn)
+                return;
+
+            if (Port == null || !Port.IsOpen)
+                return;
+
+            if (lever == LeverKind.Dit || lever == LeverKind.Straight || lever == LeverKind.Oscillate) {
+                Port.RtsEnable = !RtsNormallyHigh;
+            } else if (lever == LeverKind.Dah) {
+                Port.DtrEnable = !DtrNormallyHigh;
+            }
+
+            UpdatePianoTwice($"");
+        }
+
+
         private void Port_ErrorReceived(object sender, SerialErrorReceivedEventArgs e) {
             Debug.WriteLine($"port error: {e.EventType}.");
             UpdatePianoTwice(e.EventType.ToString());
         }
 
         private void Port_PinChanged(object sender, SerialPinChangedEventArgs e) {
-            if (e.EventType.HasFlag(SerialPinChange.CtsChanged)) {
-                var down = (Port?.CtsHolding ?? CtsNormallyHigh) != CtsNormallyHigh;
-                if (down) {
-                    Levers?.PushLeverDown(VirtualLever.Left);
-                } else {
-                    Levers?.ReleaseLever(VirtualLever.Left);
-                }
+            if (ListenOn) {
+                // TODO: play on separate oscillator
             }
 
-            if (e.EventType.HasFlag(SerialPinChange.DsrChanged)) {
-                var down = (Port?.DsrHolding ?? DsrNormallyHigh) != DsrNormallyHigh;
-                if (down) {
-                    Levers?.PushLeverDown(VirtualLever.Right);
-                } else {
-                    Levers?.ReleaseLever(VirtualLever.Right);
+            if (PlayAsInputOn) {
+                if (e.EventType.HasFlag(SerialPinChange.CtsChanged)) {
+                    var down = (Port?.CtsHolding ?? CtsNormallyHigh) != CtsNormallyHigh;
+                    if (down) {
+                        Levers?.PushLeverDown(VirtualLever.Left);
+                    } else {
+                        Levers?.ReleaseLever(VirtualLever.Left);
+                    }
+                }
+
+                if (e.EventType.HasFlag(SerialPinChange.DsrChanged)) { // if (e.EventType.HasFlag(SerialPinChange.DsrChanged)) {
+                    var down = (Port?.DsrHolding ?? DsrNormallyHigh) != DsrNormallyHigh;
+                    if (down) {
+                        Levers?.PushLeverDown(VirtualLever.Right);
+                    } else {
+                        Levers?.ReleaseLever(VirtualLever.Right);
+                    }
                 }
             }
 
@@ -121,12 +191,34 @@ namespace upSidetone.InputDevices {
         void UpdatePiano(string also = "") {
             if (Port != null && Port.IsOpen) {
                 var pianoText = $"{Port.PortName}: " + string.Join(" ", ActivePins().Append(also));
-                MainWindow.Me?.PortPinsPianoUpdate(pianoText);
+                if (IsSecondPort) {
+                    MainWindow.Me?.VPortPinsPianoUpdate(also);
+                } else {
+                    MainWindow.Me?.PortPinsPianoUpdate(also);
+                }
             } else {
                 // "also" is likely an error
-                MainWindow.Me?.PortPinsPianoUpdate(also);
+                if (IsSecondPort) {
+                    MainWindow.Me?.VPortPinsPianoUpdate(also);
+                } else {
+                    MainWindow.Me?.PortPinsPianoUpdate(also);
+                }
             }
         }
+
+
+        public void ResetPins() {
+            // after changing config settings, reset pins to normal state
+            if (Port == null || !Port.IsOpen)
+                return;
+
+            Port.RtsEnable = RtsNormallyHigh;
+            Port.DtrEnable = DtrNormallyHigh;
+
+            UpdatePianoTwice($"");
+        }
+
+
         IEnumerable<string> ActivePins() {
             if (Port != null) {
                 //if (Port.IsOpen) yield return "Open"; // when open, show the port name (no need to say "Open")

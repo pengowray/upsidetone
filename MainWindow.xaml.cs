@@ -19,6 +19,7 @@ using System.Windows.Shapes;
 using upSidetone.InputDevices;
 using static System.Net.Mime.MediaTypeNames;
 using System.Diagnostics;
+using NAudio.Gui;
 
 namespace upSidetone {
     /// <summary>
@@ -39,7 +40,7 @@ namespace upSidetone {
 
         SerialPortInfo PortInfo;
         SerialPortReader Port;
-        VirtualSerialPort VPort;
+        SerialPortReader VPort;
 
         bool enableTcpSerialServer = false;
         //DosboxENetSerial? ENetSerial; // experimental/broken
@@ -478,6 +479,9 @@ namespace upSidetone {
                 Debug.WriteLine("Port connection attempt...");
 
                 Port = new SerialPortReader(selected, Levers);
+                Port.PlayAsInputOn = true;
+                Port.PassThruOn = false;
+                Port.ListenOn = false;
                 Port.Enable();
                 Debug.WriteLine("Port connected: " + selected);
                 arg.Handled = true;
@@ -499,7 +503,12 @@ namespace upSidetone {
             try {
                 Debug.WriteLine("VPort connection attempt...");
 
-                VPort = new VirtualSerialPort(selected, Levers);
+                VPort = new SerialPortReader(selected, Levers);
+                VPort.PlayAsInputOn = false;
+                VPort.ListenOn = false; 
+                VPort.PassThruOn = true;
+                VPort.IsSecondPort = true;
+
                 VPort.RtsNormallyHigh = RTSHighCheckbox.IsChecked ?? VPort.RtsNormallyHigh;
                 VPort.Enable();
                 Debug.WriteLine("VPort connected: " + selected);

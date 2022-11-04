@@ -74,9 +74,9 @@ namespace upSidetone.InputDevices {
             // DSR (6) <-> DTR (4)
             // RTS (7) <-> CTS (8)
             if (lever == LeverKind.Dit || lever == LeverKind.Straight || lever == LeverKind.Oscillate) {
-                Port.DtrEnable = DtrNormallyHigh;
-            } else if (lever == LeverKind.Dah) {
                 Port.RtsEnable = RtsNormallyHigh;
+            } else if (lever == LeverKind.Dah) {
+                Port.DtrEnable = DtrNormallyHigh;
             }
         }
 
@@ -85,9 +85,9 @@ namespace upSidetone.InputDevices {
                 return;
 
             if (lever == LeverKind.Dit || lever == LeverKind.Straight || lever == LeverKind.Oscillate) {
-                Port.DtrEnable = !DtrNormallyHigh;
-            } else if (lever == LeverKind.Dah) {
                 Port.RtsEnable = !RtsNormallyHigh;
+            } else if (lever == LeverKind.Dah) {
+                Port.DtrEnable = !DtrNormallyHigh;
             }
 
             UpdatePianoTwice($"");
@@ -98,8 +98,8 @@ namespace upSidetone.InputDevices {
             if (Port == null || !Port.IsOpen)
                 return;
 
-            Port.DtrEnable = DtrNormallyHigh;
             Port.RtsEnable = RtsNormallyHigh;
+            Port.DtrEnable = DtrNormallyHigh;
 
             UpdatePianoTwice($"");
         }
@@ -140,7 +140,6 @@ namespace upSidetone.InputDevices {
 
         IEnumerable<string> ActivePins() {
             if (Port != null) {
-                //if (Port.IsOpen) yield return "Open"; // when open, show the port name (no need to say "Open")
                 //if (Port.IsOpen) yield return "Open"; // when open, show the port name (no need to say "Open")
                 if (Port.BreakState) yield return "Break";
                 if (Port.CDHolding) yield return "CD"; // pin 1 (aka DCD)

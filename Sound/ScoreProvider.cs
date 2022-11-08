@@ -23,12 +23,14 @@ namespace upSidetone.Sound {
     public class ScoreProvider : ISampleProvider {
         public long SampleCursor = 0; // how many samples have been read ever
 
-        private readonly List<ISampleProvider> sources;
+        private readonly List<SwitchableDelayedSound> sources; // was: ISampleProvider
+        //private readonly List<SwitchableDelayedSound> sounds; // sources of type SwitchableDelayedSound
         private float[] sourceBuffer;
         private const int MaxInputs = 1024; // protect ourselves against doing something silly
 
         public string DebugText() {
-            var sounds = sources.Select(s => s as SwitchableDelayedSound);
+            var sounds = sources;
+            //var sounds = sources.Select(s => s as SwitchableDelayedSound);
             string playing = String.Join(" ", sounds.Select(p => p == null ? "null" : $"{p.Lever}{(p.IsLockedIn ? "🔒" : "")}"));
             return playing;
         }
@@ -41,7 +43,7 @@ namespace upSidetone.Sound {
             if (waveFormat.Encoding != WaveFormatEncoding.IeeeFloat) {
                 throw new ArgumentException("Mixer wave format must be IEEE float");
             }
-            sources = new List<ISampleProvider>();
+            sources = new List<SwitchableDelayedSound>();
             WaveFormat = waveFormat;
             ReadFully = true;
         }
@@ -51,8 +53,8 @@ namespace upSidetone.Sound {
         /// </summary>
         /// <param name="sources">Mixer inputs - must all have the same waveformat, and must
         /// all be of the same WaveFormat. There must be at least one input</param>
-        public ScoreProvider(IEnumerable<ISampleProvider> sources) {
-            this.sources = new List<ISampleProvider>();
+        public ScoreProvider(IEnumerable<SwitchableDelayedSound> sources) {
+            this.sources = new List<SwitchableDelayedSound>();
             foreach (var source in sources) {
                 AddMixerInput(source);
             }
@@ -91,7 +93,7 @@ namespace upSidetone.Sound {
         /// Adds a new mixer input
         /// </summary>
         /// <param name="mixerInput">Mixer input</param>
-        public void AddMixerInput(ISampleProvider mixerInput) {
+        public void AddMixerInput(SwitchableDelayedSound mixerInput) {
             // we'll just call the lock around add since we are protecting against an AddMixerInput at
             // the same time as a Read, rather than two AddMixerInput calls at the same time
             lock (sources) {
@@ -119,7 +121,7 @@ namespace upSidetone.Sound {
         /// Removes a mixer input
         /// </summary>
         /// <param name="mixerInput">Mixer input to remove</param>
-        public void RemoveMixerInput(ISampleProvider mixerInput) {
+        public void RemoveMixerInput(SwitchableDelayedSound mixerInput) {
             lock (sources) {
                 sources.Remove(mixerInput);
             }
@@ -160,11 +162,12 @@ namespace upSidetone.Sound {
                 while (index >= 0) {
                     var source = sources[index];
                     int samplesRead;
-                    if (source is SwitchableDelayedSound sSource) {
-                        samplesRead = sSource.Read(sourceBuffer, 0, count, cursor);
-                    } else {
-                        samplesRead = source.Read(sourceBuffer, 0, count);
-                    }
+                    //if (source is SwitchableDelayedSound sSource) {
+                    //    samplesRead = sSource.Read(sourceBuffer, 0, count, cursor);
+                    //} else {
+                    //    samplesRead = source.Read(sourceBuffer, 0, count);
+                    //}
+                    samplesRead = source.Read(sourceBuffer, 0, count, cursor);
                     int outIndex = offset;
                     for (int n = 0; n < samplesRead; n++) {
                         if (n >= outputSamples) {

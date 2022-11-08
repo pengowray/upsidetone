@@ -14,9 +14,6 @@ namespace upSidetone.InputDevices {
 
     public class SerialPortReader : IDisposable {
 
-        //TODO: merge with VirtualSerialPort: allow same port for read and write
-        //TODO: reduce duplicated code with VirtualSerialPort 
-
         public string PortName { get; private set; }
         private SerialPort? Port;
         private Levers Levers;
@@ -34,13 +31,14 @@ namespace upSidetone.InputDevices {
         public bool PlayAsInputOn = true;
         public bool ListenOn = false; // play on a separate oscillator
         public bool CtsNormallyHigh = false; // set automatically during Enable()
-        public bool DsrNormallyHigh = true;  // set automatically during Enable()
+        public bool DsrNormallyHigh = false;  // set automatically during Enable() [true?]
+        public bool CDNormallyHigh = false;
 
 
         // send (pass thru) -- DTR / RTS
-        public bool PassThruOn = false; // pass on lever presses
+        public bool PassThruOn = false; // pass on lever presses to these pins
         public bool DtrNormallyHigh = false; 
-        public bool RtsNormallyHigh = true;
+        public bool RtsNormallyHigh = false; // [true?]
 
         private bool disposedValue;
 
@@ -71,11 +69,12 @@ namespace upSidetone.InputDevices {
                 // receive
                 CtsNormallyHigh = Port?.CtsHolding ?? CtsNormallyHigh;
                 DsrNormallyHigh = Port?.DsrHolding ?? DsrNormallyHigh;
+                CDNormallyHigh = Port?.CDHolding ?? CDNormallyHigh;
 
                 //send
                 Port.DtrEnable = DtrNormallyHigh;
                 Port.RtsEnable = RtsNormallyHigh;
-
+                
 
                 if (Port != null && Port.IsOpen) {
                     UpdatePiano("Connected");
@@ -231,7 +230,7 @@ namespace upSidetone.InputDevices {
                 if (Port.DsrHolding) yield return "DSR"; // pin 6 (rx from DTR)
                 if (Port.RtsEnable) yield return "RTS"; // pin 7 (tx to cts)
                 if (Port.CtsHolding) yield return "CTS"; // pin 8
-                // pin 9: RI ← Ring Indicator
+                // pin 9: RI ← Ring Indicator -- can only be seen via change events
                 if (Port.BytesToRead > 0) yield return $"[{Port.BytesToRead} bytes to read]";
             }
         }
@@ -242,6 +241,7 @@ namespace upSidetone.InputDevices {
                     // dispose managed state (managed objects)
                     Port?.Close();
                     Port?.Dispose();
+                    Port = null;
                 }
 
                 // TODO: free unmanaged resources (unmanaged objects) and override finalizer

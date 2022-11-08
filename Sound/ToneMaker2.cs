@@ -35,6 +35,27 @@ namespace upSidetone.Sound {
 
         private bool DebugOn = true;
 
+        BeepAttackDecay Options = BeepAttackDecay.Preset_Smooth;
+        //BeepAttackDecay Options = BeepAttackDecay.Preset_SharpNoClick; // not working? TODO (endless beep)
+        AudioOut AudioOut;
+        //MixingSampleProvider ScoreProvider;
+        ScoreProvider ScoreProvider;
+        List<SwitchableDelayedSound> Playing = new(); //TODO: shouldn't this be in ScoreProvider instead? (basically already duplicated in there)
+        Beep Beep;
+        private bool disposedValue;
+
+        Queue<LeverKind> Required = new();
+        LeverKind[]? Fill;
+        int FillPos = 0;
+        bool BFill = false; // true: iambic B squeeze mode is on: whenever a symbol is queued, the next in the fill is required
+        LeverKind StraightDown = LeverKind.None; // None or StraightDown or Oscillate. Is the straight key down? (shouldn't we just ask Levers?)
+
+        public WaveFormat ParentWaveFormat => AudioOut?.Format;
+
+        // note: We use mono because mono is assumed + required by FadeOutSampleProvider and SwitchableDelayedSound or they'll mess up
+        // TODO: make them work with stereo / abitrary channels
+        public WaveFormat WaveFormat => WaveFormat.CreateIeeeFloatWaveFormat(ParentWaveFormat.SampleRate, 1);
+
         public bool SetWPM(double wpm) {
             // returns true on success
 
@@ -79,28 +100,6 @@ namespace upSidetone.Sound {
 
             return true;
         }
-
-        BeepAttackDecay Options = BeepAttackDecay.Preset_Smooth;
-        //BeepAttackDecay Options = BeepAttackDecay.Preset_SharpNoClick; // not working? TODO (endless beep)
-        AudioOut AudioOut;
-        //MixingSampleProvider ScoreProvider;
-        ScoreProvider ScoreProvider;
-        List<SwitchableDelayedSound> Playing = new(); //TODO: shouldn't this be in ScoreProvider instead? (basically already duplicated in there)
-        Beep Beep;
-        private bool disposedValue;
-
-        Queue<LeverKind> Required = new();
-        LeverKind[]? Fill;
-        int FillPos = 0;
-        bool BFill = false; // true: iambic B squeeze mode is on: whenever a symbol is queued, the next in the fill is required
-        LeverKind StraightDown = LeverKind.None; // None or StraightDown or Oscillate. Is the straight key down? (shouldn't we just ask Levers?)
-
-        public WaveFormat ParentWaveFormat => AudioOut?.Format;
-
-        // note: We use mono because mono is assumed + required by FadeOutSampleProvider and SwitchableDelayedSound or they'll mess up
-        // TODO: make them work with stereo / abitrary channels
-        public WaveFormat WaveFormat => WaveFormat.CreateIeeeFloatWaveFormat(ParentWaveFormat.SampleRate, 1);
-
         public ToneMaker(AudioOut audioOut) {
             
             SetWPM(18.0); // default wpm

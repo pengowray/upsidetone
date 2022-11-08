@@ -20,11 +20,10 @@ using upSidetone.InputDevices;
 using static System.Net.Mime.MediaTypeNames;
 using System.Diagnostics;
 using NAudio.Gui;
+using System.Runtime.Versioning;
 
 namespace upSidetone {
-    /// <summary>
-    /// Interaction logic for MainWindow.xaml
-    /// </summary>
+
     public partial class MainWindow : Window, IDisposable {
 
         static public MainWindow Me { get; private set; } // Singleton (Lazy hack mostly for debugging)
@@ -52,7 +51,6 @@ namespace upSidetone {
             Me = this;
             
             Debug.WriteLine("hello.");
-
 
             Closed += MainWindow_Closed;
 

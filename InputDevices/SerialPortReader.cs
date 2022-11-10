@@ -99,7 +99,7 @@ namespace upSidetone.InputDevices {
         }
 
 
-        private void Levers_LeverUp(Levers levers, LeverKind lever, LeverKind require, LeverKind[]? fill, bool bFill = false) {
+        private void Levers_LeverUp(VirtualLeverEventArgs args) {
             // pass through mode
             // TODO: for pass through mode, really should be subscribing to the plain lever events, not as filtered as this
 
@@ -111,23 +111,23 @@ namespace upSidetone.InputDevices {
 
             // DSR (6) <-> DTR (4)
             // RTS (7) <-> CTS (8)
-            if (lever == LeverKind.Dit || lever == LeverKind.Straight || lever == LeverKind.Oscillate) {
+            if (args.vLever == VirtualLever.Left) {
                 Port.RtsEnable = RtsNormallyHigh;
-            } else if (lever == LeverKind.Dah) {
+            } else if (args.vLever == VirtualLever.Right) {
                 Port.DtrEnable = DtrNormallyHigh;
             }
         }
 
-        private void Levers_LeverDown(Levers levers, LeverKind lever, LeverKind require, LeverKind[]? fill, bool bFill = false) {
+        private void Levers_LeverDown(VirtualLeverEventArgs args) {
             if (!PassThruOn)
                 return;
 
             if (Port == null || !Port.IsOpen)
                 return;
 
-            if (lever == LeverKind.Dit || lever == LeverKind.Straight || lever == LeverKind.Oscillate) {
+            if (args.vLever == VirtualLever.Left) {
                 Port.RtsEnable = !RtsNormallyHigh;
-            } else if (lever == LeverKind.Dah) {
+            } else if (args.vLever == VirtualLever.Right) {
                 Port.DtrEnable = !DtrNormallyHigh;
             }
 

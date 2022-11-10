@@ -28,11 +28,12 @@ namespace upSidetone {
 
         static public MainWindow Me { get; private set; } // Singleton (Lazy hack mostly for debugging)
 
-        int Latency = 90;
+        int Latency = 50;
 
         AudioOut AudioOut;
         ToneMaker SoundGen;
         Levers Levers;
+        Keying Keyer;
         MidiInput MidiInput;
         KeyboardInputWPF KeyboardInput;
         MorseMouses MorseMouses;
@@ -57,7 +58,8 @@ namespace upSidetone {
             InitializeComponent();
 
             Levers = new Levers();
-            Levers.Mode = KeyerMode.Ultimatic; //KeyerMode.IambicA;
+            Keyer = new Keying(KeyerMode.Ultimatic);
+            Keyer.ListenToLevers(Levers);
 
             MidiInput = new MidiInput();
             MidiInput.Levers = Levers;
@@ -146,7 +148,7 @@ namespace upSidetone {
                 AudioOut = new AudioOut();
                 AudioOut.Enable(selected, Latency);
 
-                SoundGen?.StopListeningToLevers(Levers); // remove old
+                SoundGen?.StopListeningToKeyer(Keyer); // remove old
                 SoundGen?.Dispose();
                 SoundGen = new ToneMaker(AudioOut);
 
@@ -156,7 +158,7 @@ namespace upSidetone {
                 WPM_TextChanged(null, null);
 
                 SoundGen.Enable();
-                SoundGen.ListenToLevers(Levers);
+                SoundGen.ListenToKeyer(Keyer);
 
                 //MidiIntput?.SetLevers(Sounder);
                 //KeyboardInput?.SetSounder(Sounder);
@@ -404,28 +406,28 @@ namespace upSidetone {
         }
 
         private void KeyerModeSelect_SelectionChanged(object sender, SelectionChangedEventArgs e) {
-            Levers.ReleaseAll();
+            Keyer.ReleaseAll();
 
             if (KeyerModeSelect.SelectedIndex == 0) {
-                Levers.Mode = KeyerMode.Oscillator;
+                Keyer.Mode = KeyerMode.Oscillator;
             } else if (KeyerModeSelect.SelectedIndex == 1) {
-                Levers.Mode = KeyerMode.StraightKey;
+                Keyer.Mode = KeyerMode.StraightKey;
             } else if (KeyerModeSelect.SelectedIndex == 2) {
-                Levers.Mode = KeyerMode.IambicA;
+                Keyer.Mode = KeyerMode.IambicA;
             } else if (KeyerModeSelect.SelectedIndex == 3) {
-                Levers.Mode = KeyerMode.IambicB;
+                Keyer.Mode = KeyerMode.IambicB;
             } else if (KeyerModeSelect.SelectedIndex == 4) {
-                Levers.Mode = KeyerMode.Hybrid;
+                Keyer.Mode = KeyerMode.Hybrid;
             } else if (KeyerModeSelect.SelectedIndex == 5) {
-                Levers.Mode = KeyerMode.Ultimatic;
+                Keyer.Mode = KeyerMode.Ultimatic;
             } else if (KeyerModeSelect.SelectedIndex == 6) {
-                Levers.Mode = KeyerMode.NoRepeats;
+                Keyer.Mode = KeyerMode.NoRepeats;
             } else if (KeyerModeSelect.SelectedIndex == 7) {
-                Levers.Mode = KeyerMode.Locking;
+                Keyer.Mode = KeyerMode.Locking;
             } else if (KeyerModeSelect.SelectedIndex == 8) {
-                Levers.Mode = KeyerMode.HybridLocking;
+                Keyer.Mode = KeyerMode.HybridLocking;
             } else if (KeyerModeSelect.SelectedIndex == 9) {
-                Levers.Mode = KeyerMode.Swamp;
+                Keyer.Mode = KeyerMode.Swamp;
             }
         }
 

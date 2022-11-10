@@ -45,7 +45,7 @@ namespace upSidetone.Sound
         const string PRE_WASAPI = "WASAPI: "; // WASAPI is called WDM in VoiceMeeter, but WDM and WASAPI are separate in JACK2 for Windows; related to KS (Kernel Streaming)
         const string PRE_ASIO = "ASIO: ";
 
-        private int DesiredLatency = 90;
+        private int DesiredLatency = 50;
         private int ReportLatency = 0; // Latency used when creating OutDevice; For reporting back to the user.
 
         public IWavePlayer? OutDevice; // DirectSoundOut or AsioOut

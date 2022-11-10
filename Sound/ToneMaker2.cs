@@ -47,7 +47,7 @@ namespace upSidetone.Sound {
         Queue<LeverKind> Required = new();
         LeverKind[]? Fill;
         int FillPos = 0;
-        bool BFill = false; // true: iambic B squeeze mode is on: whenever a symbol is queued, the next in the fill is required
+        bool BFill = false; // true: iambic B squeeze mode is on: whenever a symbol is queued, the next in the fill is required (todo: maybe rename to BFillModeOn)
         LeverKind StraightDown = LeverKind.None; // None or StraightDown or Oscillate. Is the straight key down? (shouldn't we just ask Levers?)
 
         public WaveFormat ParentWaveFormat => AudioOut?.Format;
@@ -118,16 +118,18 @@ namespace upSidetone.Sound {
             AudioOut.Mixer.AddMixerInput(ScoreProvider.ToStereo());
         }
 
-        public void ListenToLevers(Levers levers) {
-            levers.LeverDown += Levers_LeverDown;
-            levers.LeverUp += Levers_LeverUp;
-            levers.LeverDoubled += Levers_LeverDoubled;
+        public void ListenToKeyer(Keying levers) {
+            //levers.LeverDown += Levers_LeverDown;
+            //levers.LeverUp += Levers_LeverUp;
+            //levers.LeverDoubled += Levers_LeverDoubled;
+            levers.LeverKeyed += Levers_LeverKeyed;
         }
 
-        public void StopListeningToLevers(Levers levers) {
-            levers.LeverDown -= Levers_LeverDown;
-            levers.LeverUp -= Levers_LeverUp;
-            levers.LeverDoubled -= Levers_LeverDoubled;
+        public void StopListeningToKeyer(Keying levers) {
+            //levers.LeverDown -= Levers_LeverDown;
+            //levers.LeverUp -= Levers_LeverUp;
+            //levers.LeverDoubled -= Levers_LeverDoubled;
+            levers.LeverKeyed -= Levers_LeverKeyed;
         }
 
 
@@ -194,49 +196,54 @@ namespace upSidetone.Sound {
             }
         }
 
-        private void Levers_LeverUp(Levers levers, LeverKind lever, LeverKind require, LeverKind[]? fill, bool bFill) {
-            //TODO: check if correct lever released
-            //TODO: check if other lever is down
+        
+        private void Levers_LeverKeyed(KeyingEventArgs args) {
+            if (args.isDown) {
+                if (args.require != LeverKind.None)
+                    Required.Enqueue(args.require);
+                Fill = args.fill;
+                FillPos = 0;
+                BFill = args.bFill;
 
-            //if bringing up active straight key...
+                Debug.Assert(args.fill == null || (args.fill != null && !args.fill.Contains(LeverKind.Oscillate)), "error maybe");
 
-            if (lever == LeverKind.Oscillate || lever == LeverKind.Straight) {
-                StraightDown = LeverKind.None;
+                if (args.lever == LeverKind.Oscillate || args.lever == LeverKind.Straight) {
+                    StraightDown = args.lever;
+                } else {
+                    _ = ReleaseStraightKey(aggressive: true);
+                }
 
-                _ = ReleaseStraightKey(aggressive: true); // also release budding queued straight keys
+                RefillBeeps(replaceBFill: true);
+                BFillCheck2(); // lock in next if we've started a squeeze
+
+                //Debug.WriteLine("queu1: " + String.Join(" ", Playing.Select(p => p.Lever)));
+                UpdatePianoTwice();
             } else {
-                //_ = ReleaseOldStraightKeys();
+                //TODO: check if correct lever released
+                //TODO: check if other lever is down
+
+                //if bringing up active straight key...
+
+                if (args.lever == LeverKind.Oscillate || args.lever == LeverKind.Straight) {
+                    StraightDown = LeverKind.None;
+
+                    _ = ReleaseStraightKey(aggressive: true); // also release budding queued straight keys
+                } else {
+                    //_ = ReleaseOldStraightKeys();
+                }
+
+                // the rest is the same as Levers_LeverDown()
+                if (args.require != LeverKind.None)
+                    Required.Enqueue(args.require); // e.g. the other paddle that's still down
+                Fill = args.fill;
+                FillPos = 0;
+                BFill = args.bFill; //always false here
+
+                RefillBeeps(replaceBFill: false);
+                UpdatePianoTwice();
             }
-
-            // the rest is the same as Levers_LeverDown()
-            if (require != LeverKind.None) 
-                Required.Enqueue(require); // e.g. the other paddle that's still down
-            Fill = fill;
-            FillPos = 0;
-            BFill = bFill; //always false here
-
-            RefillBeeps(replaceBFill: false);
-            UpdatePianoTwice();
         }
 
-        private void Levers_LeverDown(Levers levers, LeverKind lever, LeverKind require, LeverKind[]? fill, bool bFill) {
-            if (require != LeverKind.None) 
-                Required.Enqueue(require);
-            Fill = fill;
-            FillPos = 0;
-            BFill = bFill;
-
-            if (lever == LeverKind.Oscillate || lever == LeverKind.Straight) {
-                StraightDown = lever;
-            } else {
-                _ = ReleaseStraightKey(aggressive: true);
-            }
-
-            RefillBeeps(replaceBFill: true);
-            BFillCheck2(); // lock in next if we've started a squeeze
-
-            //Debug.WriteLine("queu1: " + String.Join(" ", Playing.Select(p => p.Lever)));
-            UpdatePianoTwice();        }
 
 
         private SwitchableDelayedSound? ReleaseStraightKey(bool aggressive) {

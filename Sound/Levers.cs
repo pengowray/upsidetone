@@ -9,6 +9,7 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms.VisualStyles;
+using System.Windows.Media.Animation;
 
 namespace upSidetone.Sound {
 
@@ -19,51 +20,27 @@ namespace upSidetone.Sound {
         Right,
         // closeCircuit,
         // straight key only (or none if in another mode)
-    }
-
-    public enum LeverKind {
-        //todo: let any kind of lever be "polite" or "impolite"
-        //todo: abitrary dit/dah lengths
-        //todo: "swings" -- change length based on where in letter
-        //todo: attach a dial for WPM
-        //todo: solo indefinite -- only allowe triggering if nothing else playing
-        //todo: add queuing mode flags (basically embed KeyerMode)
-        //todo: max "indefinite" length, e.g. 8 seconds before fading out
-
-        None,
-        Oscillate, // (indefinite) straight key (will extend other elements if pressed while they're going)
-        Straight, // previously called "PoliteStraight" e.g. for second paddle elements hybrid: will queue up and leave a pause between other elements
-        Dit,
-        Dah,
-        Stop, // signal to not repeat fill
-
-        //TODO:
-        //MuteFade, // cease immediately but allow fade out
-        //MuteAfterCurrent, // let current symbol finish
-        //MuteAfterQueued (iambic B)
-    }
-
-    public enum KeyerMode {
-        None,
-        Oscillator, // plain oscillator, for external input (e.g. serial), no additional spacing added; perhaps use with a bug (until ACS option added) 
-        StraightKey, // for straightkeys, cooties, sideswipers -- may add minimum spacing between elements; 
-        IambicA,
-        IambicB,
-        Hybrid, // semi-automatic two-paddle "bug" — bug not a bug; don't pick this option with a bug
-        Ultimatic,
-        NoRepeats, // todo: find a name in the positive
-        Locking, // second paddle silences (locks up) until both released (possibly a useful accessibility mode)
-        HybridLocking,
-        Swamp, // ignore second paddle until first released. Does not seem overly useful.
-        //BestGuess // 
+        
     }
 
     // Not sure but maybe replace Sounder with this... actually use Sounder2
 
     // use this just for tracking which levers are down per source (todo)
 
-    public delegate void LeverEvent(Levers levers, LeverKind lever, LeverKind require, LeverKind[]? fill, bool bFill = false);
-    public delegate void LeverDoublePressed(Levers levers, LeverKind lever, bool doublePressed, bool priorityIncreased);
+    public class VirtualLeverEventArgs {
+        public Levers levers;
+        public VirtualLever vLever;
+        public bool isDown;
+        public bool isSwapped; // probably not needed, but might surface to user at some point
+        //public string source; // todo: e.g. "mouse"
+        public bool doublePressed;
+        public bool priorityIncreased; // double pressed but was not the last pressed
+    }
+
+    //public delegate void LeverEvent(Levers levers, LeverKind lever, LeverKind require, LeverKind[]? fill, bool bFill = false);
+    //public delegate void LeverDoublePressed(Levers levers, LeverKind lever, bool doublePressed, bool priorityIncreased);
+    public delegate void VirtualLeverEvent(VirtualLeverEventArgs args);
+
 
     public class Levers {
 
@@ -71,294 +48,125 @@ namespace upSidetone.Sound {
 
         //TODO: also track source of press (e.g. via which mouse button)
 
-        public KeyerMode Mode = KeyerMode.IambicA;
+        // swap left and right (virtual levers)
+        public bool SwapLeftRight;
+
+        private List<VirtualLever> Down = new(); // keys pressed and in what order
+        private object Lock = new object();
 
         // ignore if pressed a second time when already down;
         // if true, LeverDoubled event will never fire, and double presses won't change the order of levers
         public bool IgnoreDoublePresses;
 
-        // swap left and right (virtual levers)
-        public bool SwapLeftRight;
+        public event VirtualLeverEvent? LeverDown; // Just, like, is a lever down. For pass-thru
+        public event VirtualLeverEvent? LeverUp;
+        public event VirtualLeverEvent? LeverDoubled;
 
-        List<LeverKind> Down = new(); // keys pressed and in what order
-
-        public event LeverEvent? LeverDown;
-        public event LeverEvent? LeverUp;
-        public event LeverDoublePressed? LeverDoubled;
-
-        public IEnumerable<LeverKind> GetLeversDown() {
+        public IEnumerable<VirtualLever> GetLeversDown() {
             return Down.AsEnumerable();
         }
 
         public Levers() {
         }
 
-        public Levers(KeyerMode keyerMode) {
-            Mode = keyerMode;
-        }
+        private VirtualLeverEventArgs LeverFromVirtual(VirtualLever lever) {
+            // creates and partually fills args: levers, vLever, and isSwapped
+            // also swaps left and right if that's selected
 
-        public LeverKind LeverFreomVirtual(VirtualLever lever) {
-            if (lever == VirtualLever.None) {
-                return LeverKind.None;
+            var args = new VirtualLeverEventArgs() {
+                levers = this,
+                vLever = lever
+            };
+
+            if (!SwapLeftRight || lever == VirtualLever.None) {
+                return args;
             }
 
-            bool left = lever == VirtualLever.Left;
-            if (SwapLeftRight) left = !left;
+            Debug.Assert(lever == VirtualLever.Left || lever == VirtualLever.Right, "New virtual lever state not accounted for");
 
-            switch (Mode) {
-                case KeyerMode.StraightKey:
-                    return LeverKind.Oscillate;
+            args.isSwapped = true;
 
-                case KeyerMode.Hybrid:
-                case KeyerMode.HybridLocking:
-                    if (left) {
-                        return LeverKind.Dit;
-                    } else {
-                        return LeverKind.Straight;
-                    }
-
-                case KeyerMode.IambicA:
-                case KeyerMode.IambicB:
-                case KeyerMode.Locking:
-                case KeyerMode.NoRepeats:
-                case KeyerMode.Ultimatic:
-                case KeyerMode.Swamp:
-                    if (left) {
-                        return LeverKind.Dit;
-                    } else {
-                        return LeverKind.Dah;
-                    }
-
-                default:
-                    return LeverKind.None;
+            if (lever == VirtualLever.Left) {
+                args.vLever = VirtualLever.Right;
+            } else {
+                args.vLever = VirtualLever.Left;
             }
+            return args;
+
         }
-
-
-
+            
         public void PushLeverDown(VirtualLever vlever) {
-            var lever = LeverFreomVirtual(vlever);
-            PushLeverDown(lever);
-        }
-        public void ReleaseLever(VirtualLever vlever) {
-            var lever = LeverFreomVirtual(vlever);
-            ReleaseLever(lever);
-        }
+            var args = LeverFromVirtual(vlever);
+            var correctLever = args.vLever; // corrected left/right
+            args.isDown = true;
 
-
-        public void PushLeverDown(LeverKind lever) {
-            if (lever == LeverKind.None) {
-                //TODO: throw or just ignore?
-                //throw new ArgumentException("No lever specified");
-                return;
-            }
-
-            LeverKind require = lever;
-            LeverKind[]? fill = null;
-            bool bFill = false; // iambic B squeezed
-
-            lock (Down) {
-                bool doublePressed = false;
-                if (Down.Contains(lever)) {
+            lock (Lock) {
+                if (Down.Contains(correctLever)) {
                     if (IgnoreDoublePresses) {
                         return;
-                    }
-                    doublePressed = true;
-                    if (Down.LastOrDefault() == lever) {
-                        //TODO: don't fire while locked
+                    } 
+
+                    if (Down.LastOrDefault() == correctLever) {
                         // already pressed previously, and was last lever pressed
-                        LeverDoubled?.Invoke(this, lever, doublePressed, priorityIncreased: false);
-                        return;
+                        args.doublePressed = true;
                     } else {
                         // already pressed down, but another lever was pressed more recently
-                        Down.Remove(lever);
-                        Down.Add(lever);
                         // in case there's a time this actually matters, fire an event.
-                        LeverDoubled?.Invoke(this, lever, doublePressed, priorityIncreased: true);
-                        return;
+                        // Note: if IgnoreDoublePresses, doesn't reach here / move to end 
+                        Down.Remove(correctLever);
+                        Down.Add(correctLever);
+                        args.doublePressed = true;
+                        args.priorityIncreased = true;
                     }
+
+                } else {
+                    Down.Add(correctLever);
                 }
 
-                // defaults
-                //LeverKind[] require = new LeverKind[] { lever }; // TODO: if there's a case where we need to add more than one then change this back to array or IEnumerable
-                if (lever != LeverKind.Straight && lever != LeverKind.Oscillate) {
-                    fill = RepeatFill(lever);
-                }
-
-                if (Mode == KeyerMode.Hybrid) {
-                    // defaults are fine
-
-                } else if (Mode == KeyerMode.Ultimatic) {
-                    // defaults are fine?
-                } else if (Mode == KeyerMode.Swamp) {
-                    if (Down.Any()) {
-                        require = LeverKind.None;
-                        fill = RepeatFill(Down.FirstOrDefault());
-                    }
-
-                } else if (Mode == KeyerMode.IambicA) {
-                    if (lever == LeverKind.Dah && Down.Contains(LeverKind.Dit)) {
-                        fill = RepeatFill(LeverKind.Dit, LeverKind.Dah);
-                        //Debug.WriteLine($"dah dit dah...: {lever} " + String.Join(" ", fill.Take(4))); 
-                    } else if (lever == LeverKind.Dit && Down.Contains(LeverKind.Dah)) {
-                        fill = RepeatFill(LeverKind.Dah, LeverKind.Dit);
-                        //Debug.WriteLine($"dit dah dit...: {lever} " + String.Join(" ", fill.Take(4)));
-                    }
-
-                } else if (Mode == KeyerMode.IambicB) {
-                    if (lever == LeverKind.Dah && Down.Contains(LeverKind.Dit)) {
-                        bFill = true;
-                        fill = RepeatFill(LeverKind.Dit, LeverKind.Dah);
-                    } else if (lever == LeverKind.Dit && Down.Contains(LeverKind.Dah)) {
-                        bFill = true;
-                        fill = RepeatFill(LeverKind.Dah, LeverKind.Dit);
-                    }
-                } else if (Mode == KeyerMode.NoRepeats) {
-                    fill = null;
-                } else if (Mode == KeyerMode.Locking) {
-                    if (Down.Any()) {
-                        require = LeverKind.None;
-                        fill = null;
-                    }
-                } else if (Mode == KeyerMode.HybridLocking) {
-                    if (Down.Any()) {
-                        require = LeverKind.None;
-                        fill = null;
-                    }
-                }
-
-
-
-                Down.Add(lever);
             }
-            LeverDown?.Invoke(this, lever, require, fill, bFill);
+
+            if (args.doublePressed) {
+                LeverDoubled?.Invoke(args);
+            } else {
+                LeverDown?.Invoke(args);
+            }
+
         }
 
-        private LeverKind[] RepeatFill(params LeverKind[] fillPattern) {
-            return fillPattern;
+        public void ReleaseLever(VirtualLever vlever) {
+            var args = LeverFromVirtual(vlever);
+            args.isDown = false;
+
+            var correctLever = args.vLever; // corrected left/right
+            lock (Lock) {
+                if (!Down.Contains(correctLever)) {
+                    // no double release
+                    return;
+                }
+                Down.Remove(correctLever);
+            }
+
+            LeverUp?.Invoke(args);
         }
 
-        private void ReleaseLever(LeverKind lever) {
-            if (lever == LeverKind.None) {
-                //TODO: throw or just ignore?
-                //throw new ArgumentException("No lever specified");
-                return;
-            }
-
-            LeverKind[]? defaultFill = null; // default fill
-            KeyerMode mode;
-            int pos;
-            bool wasLast;
-
-            lock (Down) {
-
-                if (!Down.Contains(lever)) {
-                    //TODO: double release event?
-                    return;
-                }
-
-                mode = Mode;
-
-                pos = Down.IndexOf(lever);
-                wasLast = pos == Down.Count - 1;
-                Down.Remove(lever);
-                var newLast = Down.LastOrDefault();
-
-                if (newLast != LeverKind.None) {
-                    if (newLast != LeverKind.Oscillate && newLast != LeverKind.Straight) {
-                        defaultFill = RepeatFill(newLast, LeverKind.None);
-                    } else {
-                        defaultFill = RepeatFill(newLast);
-                    }
-                }
-            }
-
-            if (mode == KeyerMode.IambicA) {
-                if (lever == LeverKind.Dit && Down.Contains(LeverKind.Dah)) {
-                    LeverKind require = wasLast ? LeverKind.Dah : LeverKind.None;
-                    LeverUp?.Invoke(this, lever, require, defaultFill);
-                    return;
-                } else if (lever == LeverKind.Dah && Down.Contains(LeverKind.Dit)) {
-                    LeverKind require = wasLast ? LeverKind.Dit : LeverKind.None;
-                    LeverUp?.Invoke(this, lever, require, defaultFill);
-                    return;
-                }
-            } else if (mode == KeyerMode.IambicB) {
-                //TODO: not sure
-                if (lever == LeverKind.Dit && Down.Contains(LeverKind.Dah)) {
-                    //LeverKind require = wasLast ? LeverKind.Dah : LeverKind.None;
-                    LeverKind require = LeverKind.None;
-                    LeverUp?.Invoke(this, lever, require, defaultFill);
-                    return;
-                } else if (lever == LeverKind.Dah && Down.Contains(LeverKind.Dit)) {
-                    //LeverKind require = wasLast ? LeverKind.Dit : LeverKind.None;
-                    LeverKind require = LeverKind.None;
-                    LeverUp?.Invoke(this, lever, require, defaultFill);
-                    return;
-                }
-
-            } else if (mode == KeyerMode.Ultimatic) {
-                if (lever == LeverKind.Dit && Down.Contains(LeverKind.Dah)) {
-                    LeverKind require = wasLast ? LeverKind.Dah : LeverKind.None;
-                    LeverUp?.Invoke(this, lever, require, defaultFill);
-                    return;
-                } else if (lever == LeverKind.Dah && Down.Contains(LeverKind.Dit)) {
-                    LeverKind require = wasLast ? LeverKind.Dit : LeverKind.None;
-                    LeverUp?.Invoke(this, lever, require, defaultFill);
-                    return;
-                }
-            } else if (mode == KeyerMode.Swamp) {
-                if (lever == LeverKind.Dit && Down.Contains(LeverKind.Dah)) {
-                    LeverKind require = wasLast ? LeverKind.Dah : LeverKind.None;
-                    LeverUp?.Invoke(this, lever, require, defaultFill);
-                    return;
-                } else if (lever == LeverKind.Dah && Down.Contains(LeverKind.Dit)) {
-                    LeverKind require = wasLast ? LeverKind.Dit : LeverKind.None;
-                    LeverUp?.Invoke(this, lever, require, defaultFill);
-                    return;
-                }
-            } else if (mode == KeyerMode.Hybrid) {
-                if (lever == LeverKind.Dit && Down.Contains(LeverKind.Straight)) {
-                    //var fill = RepeatFill(LeverKind.PoliteStraight, LeverKind.Stop);
-                    //LeverUp?.Invoke(this, lever, LeverKind.None, fill);
-                    // note: required lever should not be started if straight key released
-                    LeverKind require = wasLast ? LeverKind.Straight : LeverKind.None;
-                    LeverUp?.Invoke(this, lever, require, null);
-                    return;
-                } else if (lever == LeverKind.Straight && Down.Contains(LeverKind.Dit)) {
-                    LeverKind require = wasLast ? LeverKind.Dit : LeverKind.None;
-                    LeverUp?.Invoke(this, lever, require, defaultFill);
-                    return;
-                }
-            } else if (mode == KeyerMode.NoRepeats) {
-                defaultFill = null;
-            } else if (Mode == KeyerMode.Locking) {
-                defaultFill = null;
-            } else if (Mode == KeyerMode.HybridLocking) {
-                defaultFill = null;
-            }
-
-            LeverUp?.Invoke(this, lever, LeverKind.None, defaultFill);
-        }
-
-
-        public void ReleaseAll() {
-            if (!Down.Any()) {
-                //TODO: amaybe invoke anyway?
-                return;
-            }
-
-            if (Down.Count == 1) {
-                var release = Down.FirstOrDefault();
-                Down.Clear();
-                LeverUp?.Invoke(this, release, LeverKind.None, null);
-                return;
-            }
-
-            Down.Clear();
-            var which = LeverKind.None; // really should be "all"
-            LeverUp?.Invoke(this, which, LeverKind.None, null);
-
-        }
+        //TODO
+        //public void ReleaseAll() {
+        //    if (!Down.Any()) {
+        //        //TODO: amaybe invoke anyway?
+        //        return;
+        //    }
+        //
+        //    if (Down.Count == 1) {
+        //        var release = Down.FirstOrDefault();
+        //        Down.Clear();
+        //        LeverUp?.Invoke(this, release, LeverKind.None, null);
+        //        return;
+        //    }
+        //
+        //    Down.Clear();
+        //    var which = LeverKind.None; // really should be "all"
+        //    LeverUp?.Invoke(this, which, LeverKind.None, null);
+        //
+        //}
     }
 }

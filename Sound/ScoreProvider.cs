@@ -29,7 +29,10 @@ namespace upSidetone.Sound {
         private const int MaxInputs = 1024; // protect ourselves against doing something silly
 
         public string DebugText() {
-            var sounds = sources;
+            SwitchableDelayedSound[] sounds;
+            lock (sources) {
+                sounds = sources.ToArray();
+            }
             //var sounds = sources.Select(s => s as SwitchableDelayedSound);
             string playing = String.Join(" ", sounds.Select(p => p == null ? "null" : $"{p.Lever}{(p.IsLockedIn ? "🔒" : "")}"));
             return playing;

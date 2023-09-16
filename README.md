@@ -59,21 +59,22 @@ Default PC audio typically has too much latency to comfortably listen to your ow
 
 The longer term vision for UpSidetone is as a general purpose utility. Some possiblities:
 
-1. (part done) bridge physical morse keys/paddles and various Morse software, for example allowing you to use a Morse key with old ms-dos Morse training software (by emulating a serial port for DOSBox) — 
-2. (todo) allow presets, recordings + playback, analysis, visual feedback
-3. (todo) give a low latency sidetone when using a web-based CW chatrooms.
-4. (todo) Legacy modes: Attempt to emulate exactly a Curtis 8044 series keyer chip and an Accu-keyer circuit (and variations)
-5. (todo) Make cross platform
-7. (todo) Rework the UI to be more intuitive. e.g: let the user separately add and configure: inputs (paddles); outputs (audio, ports, keyer); and keyer/oscillator presets (tone, weights, envelope, etc)
-8. (todo) Extensive help
+- [ ] (part done) bridge physical morse keys/paddles and various Morse software, for example allowing you to use a Morse key with old ms-dos Morse training software (by emulating a serial port for DOSBox) — 
+- [ ] allow presets, recordings + playback, analysis, visual feedback
+- [ ] give a low latency sidetone when using a web-based CW chatrooms.
+- [ ] Legacy modes: Attempt to emulate exactly a Curtis 8044 series keyer chip and an Accu-keyer circuit (and variations) based on HDL
+- [ ] Make cross platform
+- [ ] Rework the UI to be more intuitive. e.g: let the user separately add and configure: inputs (paddles); outputs (audio, ports, keyer); and keyer/oscillator presets (tone, weights, envelope, etc)
+- [ ] Extensive help
 
 More immediate TODO:
 
-* Save settings
-* Move audio handling in its own thread 
-* Preferred sample rate setting
-* Exclsuive mode audio
-* Much more in my notes
+- [ ] Save settings
+- [ ] Move audio handling in its own thread 
+- [ ] Preferred sample rate setting
+- [ ] Exclsuive mode audio
+- [ ] Game controller input
+- [ ] Many more items in my notes...
 
 Download:
 

@@ -13,7 +13,7 @@ Low latency morse code keyer app for PC
   * Mouse: Click the button, or choose a mouse to use in the background
   * Keyboard (foreground only): left and right ctrl keys; \[ and \]; Z and X; left and right arrows
   * MIDI instrument (works in background): Press any midi key on a selected MIDI device (every second key is a dash)
-  * Serial port: Only tested with a straight key (let me know if it works with your paddle)
+  * Serial port
   * Other inputs: feel free to ask
   * Check "Flip left/right" if your double paddles are wired backwards etc
 

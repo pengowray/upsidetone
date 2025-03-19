@@ -26,11 +26,9 @@ namespace upSidetone.Sound {
 
     public class ToneMaker : IDisposable {
 
-        //TODO: per lever
-        private double Wpm;
-        private double DitSeconds;
+        public Timings Timing;
 
-        private double Freq;
+        private double Tone;
         private double Gain; // Volume
 
         private bool DebugOn = true;
@@ -56,31 +54,19 @@ namespace upSidetone.Sound {
         // TODO: make them work with stereo / abitrary channels
         public WaveFormat WaveFormat => WaveFormat.CreateIeeeFloatWaveFormat(ParentWaveFormat.SampleRate, 1);
 
-        public bool SetWPM(double wpm) {
+
+        public bool SetTone(double tone) {
             // returns true on success
 
-            if (wpm < 1 || wpm > 200) {
+            if (tone < 2 || tone > 20000) {
                 // throw error?
                 return false;
             }
 
-            Wpm = wpm;
-            DitSeconds = 60.0 / (50.0 * wpm);
-            return true;
-        }
-
-        public bool SetFreq(double freq) {
-            // returns true on success
-
-            if (freq < 2 || freq > 20000) {
-                // throw error?
-                return false;
-            }
-
-            Freq = freq;
+            Tone = tone;
 
             if (Beep != null) 
-                Beep.Frequency = freq;
+                Beep.Tone = tone;
 
             return true;
         }
@@ -103,7 +89,7 @@ namespace upSidetone.Sound {
         public ToneMaker(AudioOut audioOut) {
             
             SetWPM(18.0); // default wpm
-            SetFreq(440);
+            SetTone(440);
 
             AudioOut = audioOut;
             //ScoreProvider = new MixingSampleProvider(ParentWaveFormat);
@@ -111,7 +97,11 @@ namespace upSidetone.Sound {
             ScoreProvider = new ScoreProvider(WaveFormat);
             ScoreProvider.ReadFully = true;
             Beep = new Beep(WaveFormat);
-            Beep.Frequency = Freq;
+            Beep.Tone = Tone;
+        }
+
+        private void SetWPM(double wpm) {
+            Timing.SetWPM(wpm);
         }
 
         public void Enable() {
@@ -199,16 +189,16 @@ namespace upSidetone.Sound {
         
         private void Levers_LeverKeyed(KeyingEventArgs args) {
             if (args.isDown) {
-                if (args.require != LeverKind.None)
-                    Required.Enqueue(args.require);
+                if (args.requireNext != LeverKind.None)
+                    Required.Enqueue(args.requireNext);
                 Fill = args.fill;
                 FillPos = 0;
                 BFill = args.bFill;
 
                 Debug.Assert(args.fill == null || (args.fill != null && !args.fill.Contains(LeverKind.Oscillate)), "error maybe");
 
-                if (args.lever == LeverKind.Oscillate || args.lever == LeverKind.Straight) {
-                    StraightDown = args.lever;
+                if (args.requireNext == LeverKind.Oscillate || args.requireNext == LeverKind.Straight) {
+                    StraightDown = args.requireNext;
                 } else {
                     _ = ReleaseStraightKey(aggressive: true);
                 }
@@ -233,8 +223,8 @@ namespace upSidetone.Sound {
                 }
 
                 // the rest is the same as Levers_LeverDown()
-                if (args.require != LeverKind.None)
-                    Required.Enqueue(args.require); // e.g. the other paddle that's still down
+                if (args.requireNext != LeverKind.None)
+                    Required.Enqueue(args.requireNext); // e.g. the other paddle that's still down
                 Fill = args.fill;
                 FillPos = 0;
                 BFill = args.bFill; //always false here
@@ -373,7 +363,7 @@ namespace upSidetone.Sound {
             SwitchableDelayedSound? straightkey = GetActiveStraightKey(false);
 
             foreach (var sound in Playing.ToArray()) {
-                bool isRequired = sound.IsRequired(!replaceBFill);
+                bool isRequired = sound.Requiredness.IsRequired(!replaceBFill);
 
                 if (sound == straightkey) {
                     newPlaying.Add(sound);
@@ -445,8 +435,9 @@ namespace upSidetone.Sound {
             if (lever == LeverKind.Dah) ditLen = 3;
             if (lever == LeverKind.None) ditLen = null; // placeholder 0 beep
 
-            long ditLenSamples = (long)(DitSeconds * WaveFormat.SampleRate);
-            long? beepSamples = ditLen.HasValue ? (long)(ditLen * DitSeconds * WaveFormat.SampleRate) : null;
+            //long ditLenSamples = (long)(DitSeconds * WaveFormat.SampleRate);
+            long? ditLenSamples = Timing.ToSamples(1);
+            long? beepSamples = Timing.ToSamples(ditLen);
 
             //long whenSamples = (long)(ditSeconds * whenInDits * AudioOut.Format.SampleRate);
             //long currentPos = ScoreProvider.CurrentSamplePos; // used here for calculating waveform phase; not for positioning the note
@@ -516,7 +507,7 @@ namespace upSidetone.Sound {
                 // assumes ditLen pause after straight key
                 //TODO: polite vs not polite
                 //TODO: straight key after straight key (no pause? idk)
-                sound.StartAt = afterThis.StartAt + (afterThis.DurationSamples ?? ditLenSamples);
+                sound.StartAt = afterThis.StartAt + (afterThis.DurationSamples ?? ditLenSamples ?? 0);
                 afterThis.Next = sound;
 
                 //if (afterThis.Next != null) {
@@ -621,7 +612,7 @@ namespace upSidetone.Sound {
             if (sound == null)
                 return;
 
-            ScoreProvider.RemoveMixerInput(sound);
+            ScoreProvider?.RemoveMixerInput(sound);
             //sound.KeyReleased(ScoreProvider?.SampleCursor ?? 0); // maybe overkill 
             sound.SampleStarted -= Next_SampleStarted;
             sound.SetChoice(null);

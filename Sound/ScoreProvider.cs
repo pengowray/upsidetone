@@ -23,14 +23,17 @@ namespace upSidetone.Sound {
     public class ScoreProvider : ISampleProvider {
         public long SampleCursor = 0; // how many samples have been read ever
 
+        //TODO change to ConcurrentQueue
         private readonly List<SwitchableDelayedSound> sources; // was: ISampleProvider
         //private readonly List<SwitchableDelayedSound> sounds; // sources of type SwitchableDelayedSound
         private float[] sourceBuffer;
         private const int MaxInputs = 1024; // protect ourselves against doing something silly
 
+        object Lock = new();
+
         public string DebugText() {
             SwitchableDelayedSound[] sounds;
-            lock (sources) {
+            lock (Lock) {
                 sounds = sources.ToArray();
             }
             //var sounds = sources.Select(s => s as SwitchableDelayedSound);
@@ -99,7 +102,7 @@ namespace upSidetone.Sound {
         public void AddMixerInput(SwitchableDelayedSound mixerInput) {
             // we'll just call the lock around add since we are protecting against an AddMixerInput at
             // the same time as a Read, rather than two AddMixerInput calls at the same time
-            lock (sources) {
+            lock (Lock) {
                 if (sources.Count >= MaxInputs) {
                     throw new InvalidOperationException("Too many mixer inputs. " + DebugText() );
                 }
@@ -125,7 +128,7 @@ namespace upSidetone.Sound {
         /// </summary>
         /// <param name="mixerInput">Mixer input to remove</param>
         public void RemoveMixerInput(SwitchableDelayedSound mixerInput) {
-            lock (sources) {
+            lock (Lock) {
                 sources.Remove(mixerInput);
             }
         }
@@ -134,7 +137,7 @@ namespace upSidetone.Sound {
         /// Removes all mixer inputs
         /// </summary>
         public void RemoveAllMixerInputs() {
-            lock (sources) {
+            lock (Lock) {
                 sources.Clear();
             }
         }
@@ -160,7 +163,7 @@ namespace upSidetone.Sound {
             }
 
             sourceBuffer = BufferHelpers.Ensure(sourceBuffer, count);
-            lock (sources) {
+            lock (Lock) {
                 int index = sources.Count - 1;
                 while (index >= 0) {
                     var source = sources[index];

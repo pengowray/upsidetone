@@ -33,8 +33,8 @@ namespace upSidetone.Sound {
         public bool isDown;
         public bool isSwapped; // probably not needed, but might surface to user at some point
         //public string source; // todo: e.g. "mouse"
-        public bool doublePressed;
-        public bool priorityIncreased; // double pressed but was not the last pressed
+        public bool alreadyPressed; // was: "doublePressed"
+        public bool priorityIncreased; // already pressed down, but another button was pressed in between (not actually used)
     }
 
     //public delegate void LeverEvent(Levers levers, LeverKind lever, LeverKind require, LeverKind[]? fill, bool bFill = false);
@@ -108,14 +108,14 @@ namespace upSidetone.Sound {
 
                     if (Down.LastOrDefault() == correctLever) {
                         // already pressed previously, and was last lever pressed
-                        args.doublePressed = true;
+                        args.alreadyPressed = true;
                     } else {
                         // already pressed down, but another lever was pressed more recently
                         // in case there's a time this actually matters, fire an event.
                         // Note: if IgnoreDoublePresses, doesn't reach here / move to end 
                         Down.Remove(correctLever);
                         Down.Add(correctLever);
-                        args.doublePressed = true;
+                        args.alreadyPressed = true;
                         args.priorityIncreased = true;
                     }
 
@@ -125,7 +125,7 @@ namespace upSidetone.Sound {
 
             }
 
-            if (args.doublePressed) {
+            if (args.alreadyPressed) {
                 LeverDoubled?.Invoke(args);
             } else {
                 LeverDown?.Invoke(args);

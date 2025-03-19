@@ -34,23 +34,24 @@ namespace upSidetone.Sound {
         StraightKey, // for straightkeys, cooties, sideswipers -- may add minimum spacing between elements; 
         IambicA,
         IambicB,
-        Hybrid, // semi-automatic two-paddle "bug" — bug not a bug; don't pick this option with a bug
+        Hybrid, // semi-automatic two-paddle "bug" — bug-like but not a bug; don't pick this option with a bug (pick Oscillator)
         Ultimatic,
-        NoRepeats, // todo: find a name in the positive
+        NonRepeating, // was: NoRepeats; todo: find a name in the positive: OneShot?
         Locking, // second paddle silences (locks up) until both released (possibly a useful accessibility mode)
         HybridLocking,
         Swamp, // ignore second paddle until first released. Does not seem overly useful.
-        //BestGuess // 
+        //Keyboard // TODO
+        //MemoryKey // TODO
     }
 
     public class KeyingEventArgs {
         public VirtualLeverEventArgs? leverInfo;
-        public Keying keyer; // this (needed?)
+        public Keying keyer; // this (todo: remove if not needed?)
         public bool isDown;
         public LeverKind lever;
-        public LeverKind require;
-        public LeverKind[]? fill;
-        public bool bFill = false;
+        public LeverKind requireNext; // what to send
+        public LeverKind[]? fill; // what to send afterwards if nothing changes
+        public bool bFill = false; // iambic B mode
     }
     
     public delegate void KeyingEvent(KeyingEventArgs args);
@@ -99,7 +100,7 @@ namespace upSidetone.Sound {
                 case KeyerMode.IambicA:
                 case KeyerMode.IambicB:
                 case KeyerMode.Locking:
-                case KeyerMode.NoRepeats:
+                case KeyerMode.NonRepeating:
                 case KeyerMode.Ultimatic:
                 case KeyerMode.Swamp:
                     if (left) {
@@ -149,7 +150,7 @@ namespace upSidetone.Sound {
                 keyer = this,
                 lever = lever,
                 isDown = true,
-                require = lever, // may change
+                requireNext = lever, // may change
                 fill = null, // may change
                 bFill = false, // may change
             };
@@ -178,7 +179,7 @@ namespace upSidetone.Sound {
                     // defaults are fine?
                 } else if (Mode == KeyerMode.Swamp) {
                     if (Down.Any()) {
-                        args.require = LeverKind.None;
+                        args.requireNext = LeverKind.None;
                         args.fill = RepeatFill(Down.FirstOrDefault());
                     }
 
@@ -199,16 +200,16 @@ namespace upSidetone.Sound {
                         args.bFill = true;
                         args.fill = RepeatFill(LeverKind.Dah, LeverKind.Dit);
                     }
-                } else if (Mode == KeyerMode.NoRepeats) {
+                } else if (Mode == KeyerMode.NonRepeating) {
                     args.fill = null;
                 } else if (Mode == KeyerMode.Locking) {
                     if (Down.Any()) {
-                        args.require = LeverKind.None;
+                        args.requireNext = LeverKind.None;
                         args.fill = null;
                     }
                 } else if (Mode == KeyerMode.HybridLocking) {
                     if (Down.Any()) {
-                        args.require = LeverKind.None;
+                        args.requireNext = LeverKind.None;
                         args.fill = null;
                     }
                 }
@@ -233,9 +234,9 @@ namespace upSidetone.Sound {
                 keyer = this,
                 lever = lever,
                 isDown = false,
-                require = LeverKind.None, // may change below
+                requireNext = LeverKind.None, // may change below
                 fill = null,  // will likely change below
-                bFill = false, // may change below
+                bFill = false, // may change below (except it doesn't)
             };
 
             KeyerMode mode;
@@ -267,43 +268,43 @@ namespace upSidetone.Sound {
 
             if (mode == KeyerMode.IambicA) {
                 if (lever == LeverKind.Dit && Down.Contains(LeverKind.Dah)) {
-                    args.require = wasLast ? LeverKind.Dah : LeverKind.None;
+                    args.requireNext = wasLast ? LeverKind.Dah : LeverKind.None;
                 } else if (lever == LeverKind.Dah && Down.Contains(LeverKind.Dit)) {
-                    args.require = wasLast ? LeverKind.Dit : LeverKind.None;
+                    args.requireNext = wasLast ? LeverKind.Dit : LeverKind.None;
                 }
             } else if (mode == KeyerMode.IambicB) {
-                //TODO: not sure
+                
                 if (lever == LeverKind.Dit && Down.Contains(LeverKind.Dah)) {
                     //LeverKind require = wasLast ? LeverKind.Dah : LeverKind.None;
-                    args.require = LeverKind.None;
+                    args.requireNext = LeverKind.None;
                 } else if (lever == LeverKind.Dah && Down.Contains(LeverKind.Dit)) {
                     //LeverKind require = wasLast ? LeverKind.Dit : LeverKind.None;
-                    args.require = LeverKind.None;
+                    args.requireNext = LeverKind.None;
                 }
 
             } else if (mode == KeyerMode.Ultimatic) {
                 if (lever == LeverKind.Dit && Down.Contains(LeverKind.Dah)) {
-                    args.require = wasLast ? LeverKind.Dah : LeverKind.None;
+                    args.requireNext = wasLast ? LeverKind.Dah : LeverKind.None;
                 } else if (lever == LeverKind.Dah && Down.Contains(LeverKind.Dit)) {
-                    args.require = wasLast ? LeverKind.Dit : LeverKind.None;
+                    args.requireNext = wasLast ? LeverKind.Dit : LeverKind.None;
                 }
             } else if (mode == KeyerMode.Swamp) {
                 if (lever == LeverKind.Dit && Down.Contains(LeverKind.Dah)) {
-                    args.require = wasLast ? LeverKind.Dah : LeverKind.None;
+                    args.requireNext = wasLast ? LeverKind.Dah : LeverKind.None;
                 } else if (lever == LeverKind.Dah && Down.Contains(LeverKind.Dit)) {
-                    args.require = wasLast ? LeverKind.Dit : LeverKind.None;
+                    args.requireNext = wasLast ? LeverKind.Dit : LeverKind.None;
                 }
             } else if (mode == KeyerMode.Hybrid) {
                 if (lever == LeverKind.Dit && Down.Contains(LeverKind.Straight)) {
                     //var fill = RepeatFill(LeverKind.PoliteStraight, LeverKind.Stop);
                     //LeverUp?.Invoke(this, lever, LeverKind.None, fill);
                     // note: required lever should not be started if straight key released
-                    args.require = wasLast ? LeverKind.Straight : LeverKind.None;
+                    args.requireNext = wasLast ? LeverKind.Straight : LeverKind.None;
                     args.fill = null;
                 } else if (lever == LeverKind.Straight && Down.Contains(LeverKind.Dit)) {
-                    args.require = wasLast ? LeverKind.Dit : LeverKind.None;
+                    args.requireNext = wasLast ? LeverKind.Dit : LeverKind.None;
                 }
-            } else if (mode == KeyerMode.NoRepeats) {
+            } else if (mode == KeyerMode.NonRepeating) {
                 args.fill = null;
             } else if (Mode == KeyerMode.Locking) {
                 args.fill = null;
@@ -325,7 +326,7 @@ namespace upSidetone.Sound {
                 keyer = this,
                 lever = LeverKind.None, // default (may change below): really should be "all"
                 isDown = false,
-                require = LeverKind.None, 
+                requireNext = LeverKind.None, 
                 fill = null, 
                 bFill = false,
             };

@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 namespace upSidetone.Sound {
 
 
-    // ridiciulous options set
+    // ridiculous options set
     [Flags]
     public enum BeepAttackDecay {
         //None = 0, // No option selected
@@ -101,7 +101,7 @@ namespace upSidetone.Sound {
 
     //TODO: rename 
     public class Beep {
-        public WaveFormat WaveFormat;
+        public WaveFormat WaveFormat; // todo: replace with Timings class
         
         // todo: package up options into audio settings or something
 
@@ -111,12 +111,20 @@ namespace upSidetone.Sound {
         float ReleaseSeconds = 0.008f; // linear fade out
         float ReleaseSecondsAdsr = 0.015f; // uses a different curve
 
-        public double Frequency = 550;
+        public double Tone = 550;
         public double Gain = 0.5;
 
         public Beep(WaveFormat format) {
+            // old: use Timings instead
             WaveFormat = format;
         }
+
+        public Beep(Timings timings) {
+            WaveFormat = timings.Wave;
+            Tone = timings.
+        }
+
+
         public ISampleProvider MakeBeep(long startSamples, long? lengthSamples, long? johncage, BeepAttackDecay options = BeepAttackDecay.Preset_Smooth) {
             //TODO: fader
 
@@ -133,13 +141,13 @@ namespace upSidetone.Sound {
             //TODO: technically don't need sampleLength if Smoothed
             if (options == BeepAttackDecay.O1_ResetOscillator) {
                 sine = new SineGenerator(WaveFormat.SampleRate, WaveFormat.Channels, 0, sampleLength: lengthSamples, startPhase: phase) {
-                    Frequency = Frequency,
+                    Frequency = Tone,
                     Gain = Gain
                 };
                 sine.Gain = Gain;
             } else {
                 sine = new SineGenerator(WaveFormat.SampleRate, WaveFormat.Channels, startSamples, sampleLength: lengthSamples, startPhase: phase) {
-                    Frequency = Frequency,
+                    Frequency = Tone,
                     Gain = Gain
                 };
                 sine.Gain = Gain;

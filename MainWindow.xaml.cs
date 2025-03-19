@@ -34,6 +34,8 @@ namespace upSidetone {
         ToneMaker SoundGen;
         Levers Levers;
         Keying Keyer;
+        AudioQueueManager AudioQueueManager;
+
         MidiInput MidiInput;
         KeyboardInputWPF KeyboardInput;
         MorseMouses MorseMouses;
@@ -159,6 +161,11 @@ namespace upSidetone {
 
                 SoundGen.Enable();
                 SoundGen.ListenToKeyer(Keyer);
+
+                // will replace SoundGen
+                AudioQueueManager = new AudioQueueManager(AudioOut?.Format);
+                AudioQueueManager.StartThread();
+                AudioQueueManager.ListenToKeyer(Keyer);
 
                 //MidiIntput?.SetLevers(Sounder);
                 //KeyboardInput?.SetSounder(Sounder);
@@ -421,7 +428,7 @@ namespace upSidetone {
             } else if (KeyerModeSelect.SelectedIndex == 5) {
                 Keyer.Mode = KeyerMode.Ultimatic;
             } else if (KeyerModeSelect.SelectedIndex == 6) {
-                Keyer.Mode = KeyerMode.NoRepeats;
+                Keyer.Mode = KeyerMode.NonRepeating;
             } else if (KeyerModeSelect.SelectedIndex == 7) {
                 Keyer.Mode = KeyerMode.Locking;
             } else if (KeyerModeSelect.SelectedIndex == 8) {
@@ -444,7 +451,7 @@ namespace upSidetone {
 
         private void Frequency_TextChanged(object sender, TextChangedEventArgs e) {
             if (Frequency != null && double.TryParse(Frequency.Text, out double result)) {
-                var success = SoundGen?.SetFreq(result) ?? false;
+                var success = SoundGen?.SetTone(result) ?? false;
             }
 
         }
